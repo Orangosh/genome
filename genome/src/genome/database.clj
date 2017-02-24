@@ -54,14 +54,21 @@
                       col_name
                       [col_var col_ref] +)))
 
-  (defn pie [T A G C cov] 
-    (if (>=  cov 2)
+(defn pie [T A G C] 
+  (let [cov (+ T A G C)]
+    (if (>=  cov 2) 
       (/(+ (* T A) (* T G) 
            (* T C) (* A G) 
            (* A C) (* G C))
         (/ (* cov (- cov 1))
            2))
-      (- 1 1)))
+      (- 1 1))))
+
+
+(defn SFS [ref T A C G]
+  (let [f { "T" T "A" A "C" C "G" G}] 
+    (i/sum (filter #(not= (f ref) %) [ T A C G]))))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,8 +134,15 @@
     (->> finalized
          (i/add-derived-column
           :pie
-          [:Tun :Aun :Gun :Cun :cov]
-          #(pie %1 %2 %3 %4 %5))))
+          [:Tun :Aun :Gun :Cun]
+          #(pie %1 %2 %3 %4))))
+
+  (def SFSd
+    (->> pied
+         (i/add-derived-column
+          :sfs
+          [:ref :Tun :Aun :Cun :Gun]
+          #(SFS  %1 %2 %3 %4 %5))))
   
   (def nucleotide_diversity (/  (i/sum (i/$ :pie pied)) (i/nrow pied)))
   (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
