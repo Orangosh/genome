@@ -152,5 +152,5 @@
   (println "Average coverage: " coverage)
 
   (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names pied))])
-    (csv/write-csv f-out (i/to-list pied))))
+    (csv/write-csv f-out [(map name (i/col-names SFSd))])
+    (csv/write-csv f-out (i/to-list SFSd))))
