@@ -12,9 +12,10 @@
 ;;;;;;;;;;;;;;for a seq
 
 
-(defn drop-parse [st] ;drops indels and numbers
-  (let [s (Integer. (re-find  #"\d+" st ))] ;finding the size of indel
-    (apply str (drop (+ (inc (count (str s))) s) st))))
+(defn drop-parse [st]
+;st start with number- and drops number and strign folowing in number size
+  (let [s (Integer. (re-find  #"\d+" st ))] 
+    (apply str (drop (+ (count (str s)) s) st))))
 
 (defn sep-snp [sq]
  (if (not= nil sq)
@@ -23,9 +24,9 @@
                  (s/replace #"\-" ""))]
      (->> seq 
           (apply str)
-          (re-seq  #"[\+\-]\d*[^\+\-]*")
+          (re-seq  #"\d+[^\d]*") ;seq of of string that start with numbers
           (map drop-parse)
-          (apply str (apply str (re-seq #"^[^\-\+]+" seq)))))
+          (apply str (apply str (re-seq #"^[^\d]+" seq))))) ;adds the first string
    "!"))
 
 (defn create-map [seq]
