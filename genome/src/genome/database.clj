@@ -21,7 +21,8 @@
  (if (not= nil sq)
    (let [seq (-> sq
                  (s/replace #"\^." "") ;droping problematic values before parsing
-                 (s/replace #"\-" ""))]
+                 (s/replace #"\-" "")
+                 (s/replace #"\+" ""))]
      (->> seq 
           (apply str)
           (re-seq  #"\d+[^\d]*") ;seq of of string that start with numbers
