@@ -12,13 +12,15 @@
 ;;;;;;;;;;;;;;for a seq
 
 
-(defn drop-parse [st]
-  (let [s (Integer. (re-find  #"\d+" st ))]
+(defn drop-parse [st] ;drops indels and numbers
+  (let [s (Integer. (re-find  #"\d+" st ))] ;finding the size of indel
     (apply str (drop (+ (inc (count (str s))) s) st))))
 
 (defn sep-snp [sq]
  (if (not= nil sq)
-   (let [seq (s/replace sq #"\^." "")]
+   (let [seq (-> sq
+                 (s/replace #"\^." "") ;droping problematic values before parsing
+                 (s/replace #"\-" ""))]
      (->> seq 
           (apply str)
           (re-seq  #"[\+\-]\d*[^\+\-]*")
