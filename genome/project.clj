@@ -11,4 +11,5 @@
                  [yieldbot/vizard "0.1.0"]
                  [cljam "0.1.5"]]
   :jvm-opts ["-Xmx15g"]
-  :main genome.core)
+  :main genome.core
+  :aot [genome.core])

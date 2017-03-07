@@ -34,6 +34,20 @@
      :data pied)
     (i/view))   
 
-  (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names pied))])
-    (csv/write-csv f-out (i/to-list pied))
+(with-open [f-out (io/writer file_out)]
+  (csv/write-csv f-out [(map name (i/col-names pied))])
+  (csv/write-csv f-out (i/to-list pied)))
+
+(take-nth 2 (rest ( flatten (sort (frequencies (i/$ :sfs SFSd)))))) ;get sfs
+
+(i/dataset [ :sfs :count] ;get a dataset wit sfs (from databas SFSd
+           (vec (sort (frequencies (i/$ :sfs SFSd)))))
+
+(i/view (c/xy-plot ;view sfs
+         :sfs
+         :count
+         :x-label "Position"
+         :y-label "diversity"
+         :title "02-519Pb AKA''Blip'"
+                                        ;:legend true
+         :data (i/$ (range 0 20) :all j)))
