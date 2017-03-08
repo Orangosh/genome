@@ -1,4 +1,5 @@
 (ns genome.core
+  (:gen-class)
   (require [clojure.java.io :as io]
            [incanter.core :as i]
            [incanter.datasets :as id]
