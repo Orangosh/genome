@@ -15,3 +15,14 @@
   (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
   (println "Nucleotide diversity: " nucleotide_diversity)
   (println "Segregating Sites: " segregation_site))
+
+
+
+(defn win-slide [file win_size]
+  (concat (take (dec win_size) (repeat 0)) 
+          (map #(/ (apply + %) win_size) 
+               (partition win_size 1 file)))
+  )
+
+(def r (i/add-column :win_s (win-slide q 100) p))
+

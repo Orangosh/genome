@@ -61,12 +61,12 @@
 (defn pie [T A G C] 
   (let [cov (+ T A G C)]
     (if (>=  cov 2) 
-      (/(+ (* T A) (* T G) 
-           (* T C) (* A G) 
-           (* A C) (* G C))
-        (/ (* cov (- cov 1))
-           2))
-      (- 1 1))))
+      (double (/(+ (* T A) (* T G)
+                   (* T C) (* A G) 
+                   (* A C) (* G C))
+                (/ (* cov (- cov 1))
+                   2)))
+      0)))
 
 
 (defn SFS [ref T A C G]
