@@ -58,7 +58,7 @@
                       col_name
                       [col_var col_ref] +)))
 
-(defn pie [T A G C] 
+(defn pi [T A G C] 
   (let [cov (+ T A G C)]
     (if (>=  cov 2) 
       (double (/(+ (* T A) (* T G)
@@ -137,9 +137,9 @@
   (def pied 
     (->> finalized
          (i/add-derived-column
-          :pie
+          :pi
           [:Tun :Aun :Gun :Cun]
-          #(pie %1 %2 %3 %4))))
+          #(pi %1 %2 %3 %4))))
 
   (def SFSd
     (->> pied
@@ -148,8 +148,8 @@
           [:ref :Tun :Aun :Cun :Gun]
           #(SFS  %1 %2 %3 %4 %5))))
   
-  (def nucleotide_diversity (/  (i/sum (i/$ :pie pied)) (i/nrow pied)))
-  (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
+  (def nucleotide_diversity (/  (i/sum (i/$ :pi pied)) (i/nrow pied)))
+  (def segregation_sites (count (filter #(< 0 %) (i/$ :pi pied))))
   (def coverage (/ (i/sum (i/$ :cov pied)) (i/nrow pied)))
   (println "Nucleotide diversity: " nucleotide_diversity)
   (println "Segregating Sites: " segregation_sites)

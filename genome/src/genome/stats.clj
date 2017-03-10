@@ -16,13 +16,31 @@
   (println "Nucleotide diversity: " nucleotide_diversity)
   (println "Segregating Sites: " segregation_site))
 
-
-
+;creates a sliding window from a column :pi in file and adds a new col :pislide 
 (defn win-slide [file win_size]
-  (concat (take (dec win_size) (repeat 0)) 
-          (map #(/ (apply + %) win_size) 
-               (partition win_size 1 file)))
-  )
+  (let [winset (ii/read-dataset file :header true)]
+    (i/add-column
+     :pislide
+     (->> (i/$ :pi winset)
+          (partition win_size 1)
+          (map #(/ (apply + %) win_size))
+          (concat (take (dec win_size) (repeat 0))))
+     winset)))
 
-(def r (i/add-column :win_s (win-slide q 100) p))
+
+(defn pi [T A G C] 
+  (let [cov (+ T A G C)]
+    (if (>=  cov 2) 
+      (double (/(+ (* T A) (* T G)
+                   (* T C) (* A G) 
+                   (* A C) (* G C))
+                (/ (* cov (- cov 1))
+                   2)))
+      0)))
+
+
+(defn SFS [ref T A C G]
+  (let [f { "T" T "A" A "C" C "G" G}] 
+    (i/sum (filter #(not= (f ref) %) [ T A C G]))))
+
 
