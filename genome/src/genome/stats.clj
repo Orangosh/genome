@@ -8,26 +8,19 @@
            [clojure.string :as s]
            [clojure.data.csv :as csv]))
 
-
-(defn stat-report [file_in]
-  (def pied (ii/read-dataset file_in :header true))
-  (def nucleotide_diversity (/  (i/sum (i/$ :pie pied)) (i/nrow pied)))
-  (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
-  (println "Nucleotide diversity: " nucleotide_diversity)
-  (println "Segregating Sites: " segregation_site))
-
-;creates a sliding window from a column :pi in file and adds a new col :pislide 
-(defn win-slide [file win_size]
+;Creates a sliding window from a column :pi in file and adds a new col :pislide 
+(defn pi-slide [file win_size]
   (let [winset (ii/read-dataset file :header true)]
     (i/add-column
-     :pislide
+     :pi_sli
      (->> (i/$ :pi winset)
           (partition win_size 1)
           (map #(/ (apply + %) win_size))
           (concat (take (dec win_size) (repeat 0))))
      winset)))
 
-
+;in the future I would like to move all stats here from database
+;Calculats pi for each row
 (defn pi [T A G C] 
   (let [cov (+ T A G C)]
     (if (>=  cov 2) 
@@ -39,8 +32,29 @@
       0)))
 
 
-(defn SFS [ref T A C G]
-  (let [f { "T" T "A" A "C" C "G" G}] 
-    (i/sum (filter #(not= (f ref) %) [ T A C G]))))
+(defn unfolded-SFS [ref T A C G] 
+  (if (= ref "-")
+    (let [f { "T" T "A" A "C" C "G" G}] 
+      (apply max (filter #(not= (f ref) %) [ T A C G])))
+    "-")) 
+
+;Calculates site allele frequency before calculating spectra
+(defn multi-SFS [ref T A C G] 
+  (if (= ref "-")
+    (let [f { "T" T "A" A "C" C "G" G}] 
+      (i/sum (filter #(not= (f ref) %) [ T A C G])))
+    "-"))
+
+(defn folded-SFS [ref T A C G] 
+  (if (= ref "-")
+    (let [f { "T" T "A" A "C" C "G" G}] 
+      (second (reverse (sort [ T A C G]))))
+    "-")) 
 
 
+(defn stat-report [file_in]
+  (def pied (ii/read-dataset file_in :header true))
+  (def nucleotide_diversity (/  (i/sum (i/$ :pie pied)) (i/nrow pied)))
+  (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
+  (println "Nucleotide diversity: " nucleotide_diversity)
+  (println "Segregating Sites: " segregation_site))
