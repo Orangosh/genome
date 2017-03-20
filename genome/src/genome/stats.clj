@@ -6,18 +6,30 @@
            [incanter.charts :as c]
            [incanter.stats :as st]
            [clojure.string :as s]
-           [clojure.data.csv :as csv]))
+           [clojure.data.csv :as csv]
+           [incanter.distributions :as dst]
+           [incanter.zoo :as z]))
 
 ;Creates a sliding window from a column :pi in file and adds a new col :pislide 
-(defn pi-slide [file win_size]
+(defn pi-slide [file column win_size]
   (let [winset (ii/read-dataset file :header true)]
     (i/add-column
-     :pi_sli
-     (->> (i/$ :pi winset)
+     :sliding
+     (->> (i/$ column winset)
           (partition win_size 1)
           (map #(/ (apply + %) win_size))
           (concat (take (dec win_size) (repeat 0))))
      winset)))
+
+(defn pi-slide-try [file column win_size]
+  (let [winset (ii/read-dataset file :header true)]
+    (i/add-column
+     :slidingTry
+     (->> (i/$ column winset)
+          (z/roll-mean win_size)
+          (concat (take (dec win_size) (repeat 0))))
+     winset)))
+
 
 ;in the future I would like to move all stats here from database
 ;Calculats pi for each row
@@ -31,26 +43,40 @@
                    2)))
       0)))
 
+(defn pois_correct [database site_cov nucleotide lambda]
+  (->> database
+       (i/add-derived-column
+        :)
+   (st/cdf-poisson (/ nucleotide site_cov) :lambda lambda))))
+
 
 (defn unfolded-SFS [ref T A C G] 
-  (if (= ref "-")
+  (if-not (= ref "-")
     (let [f { "T" T "A" A "C" C "G" G}] 
       (apply max (filter #(not= (f ref) %) [ T A C G])))
     "-")) 
 
-;Calculates site allele frequency before calculating spectra
+
+;Calculates unfolded site allele frequency for all minor alleles
 (defn multi-SFS [ref T A C G] 
-  (if (= ref "-")
+  (if-not (= ref "-")
     (let [f { "T" T "A" A "C" C "G" G}] 
       (i/sum (filter #(not= (f ref) %) [ T A C G])))
     "-"))
 
-(defn folded-SFS [ref T A C G] 
-  (if (= ref "-")
-    (let [f { "T" T "A" A "C" C "G" G}] 
-      (second (reverse (sort [ T A C G]))))
-    "-")) 
 
+(defn folded-SFS [ref T A C G] 
+  (let [f { "T" T "A" A "C" C "G" G}] 
+      (second (reverse (sort [ T A C G])))))
+
+
+(defn SFS [file SFS-type]
+  (let [winset (ii/read-dataset file :header true)]
+    (->> winset
+         (i/add-derived-column
+          :sfs
+          [:ref :Tun :Aun :Cun :Gun]
+          #(SFS-type  %1 %2 %3 %4 %5)))))
 
 (defn stat-report [file_in]
   (def pied (ii/read-dataset file_in :header true))
