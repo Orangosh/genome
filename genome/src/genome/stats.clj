@@ -43,12 +43,23 @@
                    2)))
       0)))
 
-(defn pois_correct [database site_cov nucleotide lambda]
-  (->> database
-       (i/add-derived-column
-        :)
-   (st/cdf-poisson (/ nucleotide site_cov) :lambda lambda))))
+(defn poisson [col_var c_cov err_mil p]
+  (let [lambda (/ (* err_mil 1000) c_cov)] ;error corrected to lambda by coverage
+  (if (> p (st/cdf-poisson col_var :lambda lambda))
+    col_var
+    0))
 
+(defn poisson [col_var c_cov err_mil]
+  (let [lambda (* (/ c_cov 1000) err_mil)] ;err corrected by coverage
+    (st/cdf-poisson col_var :lambda lambda)))
+  
+(defn pois_correct [file col_var col_name err_mil p_value]
+  (let [p (- 1 p_value)]
+    (->> file
+         (i/add-derived-column
+          col_name
+          [col_var :c_cov]
+          #(poisson %1 %2 err_mil p)))))
 
 (defn unfolded-SFS [ref T A C G] 
   (if-not (= ref "-")

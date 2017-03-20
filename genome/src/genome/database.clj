@@ -130,10 +130,18 @@
          (unite \C \c :Cun)
          (unite \G \g :Gun))) 
 
-  (def finalized
+  (def calc_coved
     (->> reunited
-         (i/$ [:r_seq :loc :ref :cov :Aun :Tun :Cun :Gun ])))
+         (i/add-derived-column
+          :c_cov
+          [:Tun :Aun :Gun :Cun]
+          #(+ %1 %2 %3 %4))))
 
+  (def finalized
+    (->> calc_coved
+         (i/$ [:r_seq :loc :ref :cov :c_cov :Aun :Tun :Cun :Gun ])))
+
+  
   (def pied 
     (->> finalized
          (i/add-derived-column
