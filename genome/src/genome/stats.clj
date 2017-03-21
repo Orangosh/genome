@@ -179,8 +179,7 @@
                           (min (dec n-bins))))]
     (->> (map bin-fn bin-array)
          frequencies
-         sort
-         flatten)))
+         sort)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SUMMARY STATISTICS
@@ -210,5 +209,5 @@
 (def scrubed (i/$ [:r_seq :loc :ref :census_un :cov :c_cov
                    :Tpois :Apois :Cpois :Gpois] pois))
 (def sfsd (SFS scrubed folded-SFS))
-
+(def binned (bin 10 sfsd))
 
