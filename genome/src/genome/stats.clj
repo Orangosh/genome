@@ -12,6 +12,10 @@
 
 
 ;in the future I would like to move all stats here from database
+;"/home/yosh/datafiles/incar"
+(defn get-file [file]
+  (ii/read-dataset file :header true))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DIVERSITY
@@ -42,79 +46,83 @@
 
 ;Creates a sliding window from a column :pi in file and adds a new col :pislide 
 (defn slide [file  scanned_column win_size]
-  (let [winset (ii/read-dataset file :header true)]
-    (i/add-column
-     :sliding
-     (->> (i/$ scanned_column winset)
-          (partition win_size 1)
-          (map #(/ (apply + %) win_size))
-          (concat (take (dec win_size) (repeat 0))))
-     winset)))
+  (i/add-column
+   :sliding
+   (->> (i/$ scanned_column file)
+        (partition win_size 1)
+        (map #(/ (apply + %) win_size))
+        (concat (take (dec win_size) (repeat 0))))
+   file))
 
 ;Very similar with a built in function
-(defn slide-try [file scanned_column win_size]
-  (let [winset (ii/read-dataset file :header true)]
-    (i/add-column
-     :slidingTry
-     (->> (i/$ scanned_column winset)
-          (z/roll-mean win_size) ;instead of roll-min we can use roll-apply func
-          (concat (take (dec win_size) (repeat 0))))
-     winset)))
+(defn glide [file scanned_column win_size]
+  (i/add-column
+   :gliding
+   (->> (i/$ scanned_column file)
+        (z/roll-mean win_size) ;instead of roll-min we can use roll-apply func
+        (concat (take (dec win_size) (repeat 0))))
+   file))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CALL CONCENSUS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def consus_un [:consus_un [:Tun :Aun :Cun :Gun]]);for variants calling
+(def consus_pois [:consus_pois [:Tpois :Apois :Cpois :Gpois]]);after variants
+
 (defn get-max [T A C G] 
   (let [get_map {"T" T "A" A "C" C "G" G}] 
     (->> get_map 
          (keep #(when (= (val %) (apply max (vals get_map))) (key %))) 
-         rand-nth)))
+         rand-nth))) ;rand-nth will choose equally apearing nucleotide at a site
 
-(defn concensus [file]
+(defn concensus [file con_type]
   (->> file
        (i/add-derived-column
-        :consus
-        [:Tun :Aun :Cun :Gun]
+        (first con_type)
+        (last con_type) 
         #(get-max  %1 %2 %3 %4))))
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;CALL VARIANTS                                        
+;CALL VARIANTS ASSUMING POISSON DISTRIBUTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def T_matrix (i/dataset [:consus    :Aun  :Tun :Cun  :Gun] 
+;transition matrix as per illumina reads for varent calling.
+(def T_matrix (i/dataset [:consus_un    :Aun  :Tun :Cun  :Gun] 
                          [["A"         0   0.92 1.75  2.00] 
                           ["T"       0.94   0   2.41  1.82] 
                           ["C"       1.81  1.19   0   1.78]
                           ["G"       1.21  1.15 1.81    0 ]]))
 
+;take a site read base and calculat P asuming Poisson distribution
 (defn poisson [col_var col_val consus c_cov p]
   (let [lambda (->> T_matrix
-                    (i/$where {:consus {:$eq consus}})
+                    (i/$where {:consus_un {:$eq consus}})
                     (i/$ col_var)
                     (* (/ c_cov 1000)))]
     (if (< p (st/cdf-poisson col_val :lambda lambda))
       col_val
       0)))
   
-(defn pois_correct [col_var col_name p_value file]
-  (let [p (- 1 p_value)]
-    (->> file
-         (i/add-derived-column
-          col_name
-          [col_var :consus :c_cov]
-          #(poisson col_var %1 %2 %3 p)))))
+;adds new base var column after iteration over one base column
+(defn pois-correct [col_var col_name p file]
+  (->> file
+       (i/add-derived-column
+        col_name
+        [col_var :consus_un :c_cov]
+        #(poisson col_var %1 %2 %3 p))))
 
-
+;add four columns
 (defn poissonize [p_value file] 
-  (->> (pois_correct :Aun :Apois p_value file)
-       (pois_correct :Tun :Tpois p_value)
-       (pois_correct :Cun :Cpois p_value)
-       (pois_correct :Gun :Gpois p_value)))
-
+  (let [p (- 1 p_value)]
+    (->> (pois-correct :Aun :Apois p file)
+         (pois-correct :Tun :Tpois p)
+         (pois-correct :Cun :Cpois p)
+         (pois-correct :Gun :Gpois p))))
+  
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;ALLELE FREQUENCY SPECTRA
@@ -133,25 +141,74 @@
       (i/sum (filter #(not= (f ref) %) [ T A C G])))
     "-"))
 
-(defn folded-SFS [ref T A C G] 
+(defn folded-SFS [mean_cov ref c_cov T A C G] 
   (let [f { "T" T "A" A "C" C "G" G}] 
       (second (reverse (sort [ T A C G])))))
 
-(defn SFS [file SFS-type]
-  (->> file
-       (i/add-derived-column
-        :sfs
-        [:ref :Tpois :Apois :Cpois :Gpois]
-        #(SFS-type  %1 %2 %3 %4 %5))))
+(defn folded-SFS [mean_cov ref c_cov T A C G] 
+  (->> [T A C G]
+       sort
+       reverse
+       second
+       (* (/ c_cov mean_cov))
+       double))
 
+(defn SFS [file SFS-type]
+  (let [mean_cov (st/mean (i/$ :c_cov file))]
+    (->> file
+         (i/add-derived-column
+          :sfs
+          [:ref :c_cov :Tpois :Apois :Cpois :Gpois]
+          #(SFS-type mean_cov %1 %2 %3 %4 %5 %6)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;BINNING
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn bin [n-bins file] ;bin range 0-14 into 5 bins (bin 5 (range 15))
+  (let [bin-array (i/$ :sfs file)
+        min-freq (apply min bin-array)
+        max-freq (apply max bin-array)
+        range-freq (- max-freq min-freq)
+        bin-fn (fn [freq](-> freq
+                          (- min-freq)
+                          (/ range-freq)
+                          (* n-bins)
+                          (int)
+                          (min (dec n-bins))))]
+    (->> (map bin-fn bin-array)
+         frequencies
+         sort
+         flatten)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SUMMARY STATISTICS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn stat-report [file_in]
+(defn stat-report [file]
   (def pied (ii/read-dataset file_in :header true))
-  (def nucleotide_diversity (/  (i/sum (i/$ :pie pied)) (i/nrow pied)))
-  (def segregation_sites (count (filter #(< 0 %) (i/$ :pie pied))))
+  (def nucleotide_diversity (/  (i/sum (i/$ :pi file)) (i/nrow file)))
+  (def segregating_sites (count (filter #(< 0 %) (i/$ :pi file))))
   (println "Nucleotide diversity: " nucleotide_diversity)
-  (println "Segregating Sites: " segregation_site))
+  (println "Segregating Sites: " segregating_sites))
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;TESTING PIPELINE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def incr (get-file "/home/yosh/datafiles/incar"))
+(def c_cov (->> incr
+             (i/add-derived-column
+              :c_cov
+              [:Tun :Aun :Gun :Cun]
+              #(+ %1 %2 %3 %4))))
+(def conded (concensus c_cov consus_un))
+(def pois (poissonize 0.05 conded))
+(def scrubed (i/$ [:r_seq :loc :ref :census_un :cov :c_cov
+                   :Tpois :Apois :Cpois :Gpois] pois))
+(def sfsd (SFS scrubed folded-SFS))
+
+
