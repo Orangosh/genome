@@ -1,16 +1,17 @@
-(ns genome.database)
-(require '[clojure.java.io :as io]
-         '[incanter.core :as i]
-         '[incanter.datasets :as id]
-         '[incanter.io :as ii ]
-         '[incanter.charts :as c]
-         '[incanter.stats :as st]
-         '[clojure.string :as s]
-         '[clojure.data.csv :as csv])
+(ns genome.database
+  (require [clojure.java.io :as io]
+           [incanter.core :as i]
+           [incanter.datasets :as id]
+           [incanter.io :as ii ]
+           [incanter.charts :as c]
+           [incanter.stats :as st]
+           [clojure.string :as s]
+           [clojure.data.csv :as csv]))
 
-;;;;;;;;;;;;;;looks if there in a nil to avoid nullpointer in the d&c_count
-;;;;;;;;;;;;;;for a seq
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn drop-parse [st]
 ;st start with number- and drops number and strign folowing in number size
@@ -58,31 +59,17 @@
                       col_name
                       [col_var col_ref] +)))
 
-(defn pi [T A G C] 
-  (let [cov (+ T A G C)]
-    (if (>=  cov 2) 
-      (double (/(+ (* T A) (* T G)
-                   (* T C) (* A G) 
-                   (* A C) (* G C))
-                (/ (* cov (- cov 1))
-                   2)))
-      0)))
-
-
-(defn SFS [ref T A C G]
-  (let [f { "T" T "A" A "C" C "G" G}] 
-    (i/sum (filter #(not= (f ref) %) [ T A C G]))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;OPPORATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn create-db [file_in file_out]
+(defn create-db [file]
   (println "Opening a TSV file") 
-  
-  (def pileup (ii/read-dataset file_in :header false :delim \tab))
+  (def pileup (ii/read-dataset file :header false :delim \tab))
   ; "/home/yosh/datafiles/02-519-Pb_CMV_S18whole/output/mpuf"
+
   (println "Renameing colums")
-  
   (def renamed (i/rename-cols
                 {:col0     :r_seq
                  :col1     :loc
@@ -93,7 +80,6 @@
                 pileup))
   
   (println "Separating-snp")
-  
   (def  seperated-snp (->> renamed
                            (i/add-derived-column
                             :SNPs
@@ -105,7 +91,6 @@
          (i/$ [:r_seq :loc :ref :cov :SNPs])))
   
   (println "Adds column of nuc")
-  
   (def mapped 
     (->> scrubed
          (i/add-derived-column
@@ -123,7 +108,8 @@
                    (add-col \C) (add-col \c)
                    (add-col \G) (add-col \g)
                    (add-col \*)))
-  
+
+  (println "Joining columns")
   (def reunited
     (->> (unite \A \a :Aun collumned)
          (unite \T \t :Tun)
@@ -139,30 +125,4 @@
 
   (def finalized
     (->> calc_coved
-         (i/$ [:r_seq :loc :ref :cov :c_cov :Aun :Tun :Cun :Gun ])))
-
-  
-  (def pied 
-    (->> finalized
-         (i/add-derived-column
-          :pi
-          [:Tun :Aun :Gun :Cun]
-          #(pi %1 %2 %3 %4))))
-
-  (def SFSd
-    (->> pied
-         (i/add-derived-column
-          :sfs
-          [:ref :Tun :Aun :Cun :Gun]
-          #(SFS  %1 %2 %3 %4 %5))))
-  
-  (def nucleotide_diversity (/  (i/sum (i/$ :pi pied)) (i/nrow pied)))
-  (def segregation_sites (count (filter #(< 0 %) (i/$ :pi pied))))
-  (def coverage (/ (i/sum (i/$ :cov pied)) (i/nrow pied)))
-  (println "Nucleotide diversity: " nucleotide_diversity)
-  (println "Segregating Sites: " segregation_sites)
-  (println "Average coverage: " coverage)
-
-  (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names SFSd))])
-    (csv/write-csv f-out (i/to-list SFSd))))
+         (i/$ [:r_seq :loc :ref :cov :c_cov :Aun :Tun :Cun :Gun ]))))

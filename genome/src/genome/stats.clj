@@ -11,12 +11,6 @@
            [incanter.zoo :as z]))
 
 
-;in the future I would like to move all stats here from database
-;"/home/yosh/datafiles/incar"
-(defn get-file [file]
-  (ii/read-dataset file :header true))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DIVERSITY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -45,7 +39,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Creates a sliding window from a column :pi in file and adds a new col :pislide 
-(defn slide [file  scanned_column win_size]
+(defn slide [file scanned_column win_size]
   (i/add-column
    :sliding
    (->> (i/$ scanned_column file)
@@ -186,7 +180,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn stat-report [file]
-  (def pied (ii/read-dataset file_in :header true))
+  (def pied (ii/read-dataset file :header true))
   (def nucleotide_diversity (/  (i/sum (i/$ :pi file)) (i/nrow file)))
   (def segregating_sites (count (filter #(< 0 %) (i/$ :pi file))))
   (println "Nucleotide diversity: " nucleotide_diversity)
@@ -198,16 +192,21 @@
 ;TESTING PIPELINE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def incr (get-file "/home/yosh/datafiles/incar"))
-(def c_cov (->> incr
-             (i/add-derived-column
-              :c_cov
-              [:Tun :Aun :Gun :Cun]
-              #(+ %1 %2 %3 %4))))
-(def conded (concensus c_cov consus_un))
-(def pois (poissonize 0.05 conded))
-(def scrubed (i/$ [:r_seq :loc :ref :census_un :cov :c_cov
-                   :Tpois :Apois :Cpois :Gpois] pois))
-(def sfsd (SFS scrubed folded-SFS))
-(def binned (bin 10 sfsd))
 
+(defn statistics [file]
+;"/home/yosh/datafiles/incar"
+;(def incr (ii/read-dataset file :header true))
+  (def c_cov (->> file
+                  (i/add-derived-column
+                   :c_cov
+                   [:Tun :Aun :Gun :Cun]
+                   #(+ %1 %2 %3 %4))))
+  (def conded (concensus c_cov consus_un))
+  (def pois (poissonize 0.05 conded))
+  (def scrubed (i/$ [:r_seq :loc :ref :consus_un :cov :c_cov
+                     :Tpois :Apois :Cpois :Gpois] pois))
+  (def sfsd (SFS scrubed folded-SFS)))
+;(def binned (bin 10 sfsd))
+
+
+  

@@ -8,15 +8,16 @@
            [incanter.stats :as st]
            [clojure.string :as s]
            [clojure.data.csv :as csv]
-           [genome.database :as d]))
+           [genome.database :as gd]
+           [genome.stats :as gs]))
 
-(defn -main   [file_in file_out]
-  (println "Good morning Vietnam")
-  (d/create-db file_in file_out)
-  
-  (println "opening")
-  )
-  
+(defn -main [file_in file_out]
+  (println "Wellcome to clojure- starting incanter")
+  (gd/create-db file_in)
+  (gs/statistics gd/finalized)
+  (with-open [f-out (io/writer file_out)]
+    (csv/write-csv f-out [(map name (i/col-names gs/sfsd))])
+    (csv/write-csv f-out (i/to-list gs/sfsd))))
 
 
  
