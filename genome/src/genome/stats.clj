@@ -138,7 +138,7 @@
       (second (reverse (sort [ T A C G])))))
 
 (defn SFS [file SFS-type]
-  (->> winset
+  (->> file
        (i/add-derived-column
         :sfs
         [:ref :Tpois :Apois :Cpois :Gpois]
