@@ -73,12 +73,12 @@
          rand-nth)))
 
 (defn concensus [file]
-  (let [winset (ii/read-dataset file :header true)]
-    (->> winset
-         (i/add-derived-column
-          :sfs
-          [:Tun :Aun :Cun :Gun]
-          #(get-max  %1 %2 %3 %4)))))
+  (->> file
+       (i/add-derived-column
+        :consus
+        [:Tun :Aun :Cun :Gun]
+        #(get-max  %1 %2 %3 %4))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -138,12 +138,11 @@
       (second (reverse (sort [ T A C G])))))
 
 (defn SFS [file SFS-type]
-  (let [winset (ii/read-dataset file :header true)]
-    (->> winset
-         (i/add-derived-column
-          :sfs
-          [:ref :Tun :Aun :Cun :Gun]
-          #(SFS-type  %1 %2 %3 %4 %5)))))
+  (->> winset
+       (i/add-derived-column
+        :sfs
+        [:ref :Tpois :Apois :Cpois :Gpois]
+        #(SFS-type  %1 %2 %3 %4 %5))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
