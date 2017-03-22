@@ -16,22 +16,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Calculats pi for each row
-(defn pi [T A G C] 
-  (let [cov (+ T A G C)]
-    (if (>=  cov 2) 
-      (double (/(+ (* T A) (* T G)
-                   (* T C) (* A G) 
-                   (* A C) (* G C))
-                (/ (* cov (- cov 1))
-                   2)))
-      0)))
+(defn pi [cov T A C G] 
+  (if (>=  cov 2) 
+    (double (/(+ (* T A) (* T C)
+                 (* T G) (* A C) 
+                 (* A G) (* G C))
+              (/ (* cov (- cov 1))
+                 2)))
+    0))
 
-(defn pied [file]
+(def pi_un [:pi_un [:c_cov :Tun :Aun :Cun :Gun]]);for variants calling
+(def pi_pois [:pi_pois [:c_cov :Tpois :Apois :Cpois :Gpois]]);after variants
+
+(defn pise [file pi_type]
   (->> file
        (i/add-derived-column
-        :pi
-        [:Tun :Aun :Gun :Cun]
-        #(pi %1 %2 %3 %4))))
+         (first pi_type)
+         (last pi_type) 
+         #(pi %1 %2 %3 %4 %5))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -144,7 +146,7 @@
        sort
        reverse
        second
-       (* (/ c_cov mean_cov))
+       (* (/ mean_cov c_cov))
        double))
 
 (defn SFS [file SFS-type]
@@ -176,16 +178,25 @@
          sort)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;CLEAN ROWS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn row-clean [file column to_clean]
+  (->> file
+       (i/$where {column {:$ne to_clean} })))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SUMMARY STATISTICS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn stat-report [file]
-  (def pied (ii/read-dataset file :header true))
-  (def nucleotide_diversity (/  (i/sum (i/$ :pi file)) (i/nrow file)))
-  (def segregating_sites (count (filter #(< 0 %) (i/$ :pi file))))
+  (def nucleotide_diversity (/  (i/sum (i/$ :pi_pois file)) (i/nrow file)))
+  (def segregating_sites (count (filter #(< 0 %) (i/$ :pi_pois file))))
+  (def binned (bin 10 file))
   (println "Nucleotide diversity: " nucleotide_diversity)
-  (println "Segregating Sites: " segregating_sites))
-
+  (println "Segregating Sites: " segregating_sites)
+  (println "folded and binned (10) SFS " binned))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -193,20 +204,29 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+
 (defn statistics [file]
 ;"/home/yosh/datafiles/incar"
-;(def incr (ii/read-dataset file :header true))
+;(def incar (ii/read-dataset file :header true))
+  (println "Calculation corrected coverage")
   (def c_cov (->> file
                   (i/add-derived-column
                    :c_cov
                    [:Tun :Aun :Gun :Cun]
                    #(+ %1 %2 %3 %4))))
+  (println "Creating first concensus")
   (def conded (concensus c_cov consus_un))
+  (println "Correcting read errors")
   (def pois (poissonize 0.05 conded))
   (def scrubed (i/$ [:r_seq :loc :ref :consus_un :cov :c_cov
                      :Tpois :Apois :Cpois :Gpois] pois))
-  (def sfsd (SFS scrubed folded-SFS)))
-;(def binned (bin 10 sfsd))
+  (println "Calculating nucleotide diversity")
+  (def pied (pise scrubed pi_pois))
+  (println "Calculating folded allele frequency spectra")
+  (def sfsd (SFS pied folded-SFS))
+  (def row_cleaned (row-clean sfsd :ref "-"))
+  (println "SUMMARY STATISTICS:")
+  (stat-report sfsd))
 
 
   

@@ -16,8 +16,8 @@
   (gd/create-db file_in)
   (gs/statistics gd/finalized)
   (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names gs/sfsd))])
-    (csv/write-csv f-out (i/to-list gs/sfsd))))
+    (csv/write-csv f-out [(map name (i/col-names gs/row_cleaned))])
+    (csv/write-csv f-out (i/to-list gs/row_cleaned))))
 
 
  
