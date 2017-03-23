@@ -41,9 +41,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;Creates a sliding window from a column :pi in file and adds a new col :pislide 
-(defn slide [file scanned_column win_size]
+(defn slide-mean [file scanned_column new_column win_size]
   (i/add-column
-   :sliding
+   new_column
    (->> (i/$ scanned_column file)
         (partition win_size 1)
         (map #(/ (apply + %) win_size))
@@ -51,11 +51,12 @@
    file))
 
 ;Very similar with a built in function
-(defn glide [file scanned_column win_size]
+
+(defn glide-mean [file scanned_column new_column win_size]
   (i/add-column
-   :gliding
+   new_column
    (->> (i/$ scanned_column file)
-        (z/roll-mean win_size) ;instead of roll-min we can use roll-apply func
+        (z/roll-apply win_size) ;instead of roll-min we can use roll-apply func
         (concat (take (dec win_size) (repeat 0))))
    file))
 
@@ -187,6 +188,90 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;COMPLEMENTARY DNA / RNA /PROTEIN
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;adds column of complementary DNA strand
+(defn pos>neg [file scanned_column column_name]
+  (let [complementary {"A" "T" "T" "A" "C" "G" "G" "C" "-" "-"}]
+    (i/add-column
+     column_name
+     (->> (i/$ scanned_column file)
+          (replace complementary))
+     file)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;SUMMARY STATISTICS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;add columns with amino acid after transcription and translation.
+(defn nuc>aa [file scanned_fwd scanned_rev]
+  (let [DNA>protein {"AAA" "F" "AAG" "F" "AAT" "L" "AAC" "L"
+                     "AGA" "S" "AGG" "S" "AGT" "S" "AGC" "S"
+                     "ATA" "Y" "ATG" "Y" "ATT" "$" "ATC" "$"
+                     "ACA" "C" "ACG" "C" "ACT" "$" "ACC" "W" 
+                     "GAA" "L" "GAG" "L" "GAT" "L" "GAC" "L"
+                     "GGA" "P" "GGG" "P" "GGT" "P" "GGC" "P"
+                     "GTA" "H" "GTG" "H" "GTT" "Q" "GTC" "Q"
+                     "GCA" "R" "GCG" "R" "GCT" "R" "GCC" "R"
+                     "TAA" "I" "TAG" "I" "TAT" "I" "TAC" "M"
+                     "TGA" "T" "TGG" "T" "TGT" "T" "TGC" "T"
+                     "TTA" "N" "TTG" "N" "TTT" "K" "TTC" "K"
+                     "TCA" "S" "TCG" "S" "TCT" "R" "TCC" "R"
+                     "CAA" "V" "CAG" "V" "CAT" "V" "CAC" "V"
+                     "CGA" "A" "CGG" "A" "CGT" "A" "CGC" "A"
+                     "CTA" "D" "CTG" "D" "CTT" "E" "CTC" "E"
+                     "CCA" "G" "CCG" "G" "CCT" "G" "CCC" "G"}]
+    (->>(i/add-column
+         :aa_fwd
+         (->> (i/$ scanned_fwd file)
+              (partition 3 1)
+              (map #(apply str %))
+              (conj (take (dec 3) (repeat "-")))
+              flatten
+              (map DNA>protein)
+              (replace {nil "-"}))
+         file)
+        
+        (i/add-column
+         :aa_rev
+         (->> (i/$ scanned_rev file)
+              (partition 3 1)
+              (map #(apply str %))
+              (cons (take (dec 3) (repeat "-")))
+              flatten
+              (map s/reverse)
+              (map DNA>protein)
+              (replace {nil "-"}))
+         )))); <-here file should be
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;SYNONIMUS VS NONSYNONYMUS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def var_un [:var_un [:Tun :Aun :Cun :Gun]]);for variants calling
+(def var_pois [:var_pois [:Tpois :Apois :Cpois :Gpois]]);after variants
+
+;gets the variant amino acid
+
+(defn get-var-nuc [T A C G] 
+                (let [get_map {"T" T "A" A "C" C "G" G}
+                      minor_allele (second (reverse (sort (vals get_map))))]
+                  (cond
+                    (= minor_allele 0) "-"
+                    :else (->> get_map 
+                               (keep #(when (= (val %) minor_allele) (key %)))
+;rand-nth will choose equally apearing nucleotide at a site
+                               rand-nth))))                
+
+(defn minor-alleles [file con_type]
+  (->> file
+       (i/add-derived-column
+        (first con_type)
+        (last con_type) 
+        #(get-var-nuc  %1 %2 %3 %4))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SUMMARY STATISTICS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -224,9 +309,11 @@
   (def pied (pise scrubed pi_pois))
   (println "Calculating folded allele frequency spectra")
   (def sfsd (SFS pied folded-SFS))
-  (def row_cleaned (row-clean sfsd :ref "-"))
+  (def neg_stranded (pos>neg incar :consus_un :negsus_un))
+  (def aaadded (nuc>aa neg_stranded :consus_un :negsus_un))
+  (def row_cleaned (row-clean aaadded :ref "-"))
   (println "SUMMARY STATISTICS:")
   (stat-report sfsd))
 
 
-  
+(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
