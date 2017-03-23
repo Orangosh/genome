@@ -116,6 +116,7 @@
          (unite \C \c :Cun)
          (unite \G \g :Gun))) 
 
+  (println "Calculation corrected coverage")
   (def calc_coved
     (->> reunited
          (i/add-derived-column
