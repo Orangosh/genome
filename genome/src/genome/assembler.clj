@@ -16,31 +16,6 @@
 (defn create_kmers [db1 kmer]
   (let [bsk (rest (drop-last kmer)) ;dlk bi-shaved kmer
         fk (first kmer) 
-        lk (last kmer) ;rk last of kmer
-        rbsk (rest (drop-last (r_comp kmer)))
-        rfk (first (r_comp kmer))
-        rlk (last (r_comp kmer))]
-    (if (empty? db1)
-      (def dbase (conj db1 {(vec bsk) {fk {lk 1}}}))
-      (if (contains? (db1 (vec bsk)) fk) ;if contains kmer -1
-        (if (contains? ((db1 (vec bsk)) fk) lk) ; if contalins all kmer
-          (def dbase (update-in db1 [(vec bsk) fk lk] inc))   ;Add pos edge
-            (def dbase (update-in db1 [(vec bsk) fk] assoc lk 1)))
-        (if (contains? (db1 (vec rbsk)) rfk)
-          (if (contains? ((db1 (vec rbsk)) rfk) rlk)
-              (def dbase (update-in db1 [(vec rbsk) rfk rlk] inc))    ;Add negedge
-              (def dbase (update-in db1 [(vec rbsk) rfk] assoc rlk 1)))
-          (def dbase (merge-with conj db1 {(vec bsk) {fk {lk 1}}}))))))) ;New node
-
-
-
-(defn parsline [rds db2 k]
-  ;Recursion of a read needs the exsiting dbase
-  (if (> (count rds) k)
-    (let [ kmer (take k rds)]
-      (create_kmers db2 kmer)
-      (recur (rest rds) dbase k))))
-
 
 
 (defn debrujn [ln db3 k lnum readsnum]
@@ -179,3 +154,128 @@
                     "GCT" "A" "GCC" "A" "GCA" "A" "GCG" "A"
                     "GAT" "D" "GAC" "D" "GAA" "E" "GAG" "E"
                     "GGT" "G" "GGC" "G" "GGA" "G" "GGG" "G"}
+
+
+(ns genome.annotate
+  (require [clojure.java.io :as io]
+           [incanter.core :as i]
+           [incanter.stats :as st]
+           [clojure.xml :as xml]
+           [clojure.zip :as zip]
+           [clojure.data.xml :as cx]
+           [clojure.data.zip.xml :as dzx]))
+
+;; wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_006273.2&retmode=xml"
+;; mv efetch.fcgi?db=nuccore\&id=NC_006273.2\&retmode=xml merlin.xm
+
+(defn get-ids [zipper]
+  "Extract specific elements from an XML document"
+  (dzx/xml-> zipper
+             :IdList
+             :Id
+             dzx/text))
+
+(defn get-affiliations [zipper]
+  "Extract affiliations from PubMed abstracts"
+  (map (fn [a b c d] (vector a b c d))
+       (dzx/xml-> zipper
+                  :GBSeq
+                  :GBSeq_feature-table
+                  :GBFeature
+                  :GBFeature_intervals
+                  :GBInterval
+                  :GBInterval_from                  
+                  dzx/text)
+       (dzx/xml-> zipper
+                  :GBSeq
+                  :GBSeq_feature-table
+                  :GBFeature
+                  :GBFeature_intervals
+                  :GBInterval
+                  :GBInterval_to                  
+                  dzx/text)
+       (dzx/xml-> zipper
+                  :GBSeq
+                  :GBSeq_feature-table
+                  :GBFeature
+                  :GBFeature_quals
+                  :GBQualifier
+                  :GBQualifier_name
+                  dzx/text)
+       (dzx/xml-> zipper
+                  :GBSeq
+                  :GBSeq_feature-table
+                  :GBFeature
+                  :GBFeature_quals
+                  :GBQualifier
+                  :GBQualifier_value
+                  dzx/text)))
+
+
+(def data "/home/yosh/datafiles/merlin.xml")
+
+(println (get-ids
+      (zip/xml-zip
+       (xml/parse data))))
+
+(def dat1 (get-affiliations (->> data
+                                 xml/parse
+                                 zip/xml-zip
+                                 zip/down))
+
+
+
+(def col_names {:GBFeature_key :feature
+                :GBInterval_from :starts
+                :GBInterval_to :ends})
+
+(def qualifiers {:GBQualifier_name :description
+                 :GBQualifier_value :specification})
+
+(def replace_col_names {:col-0 :feature
+                        :col-1 :starts
+                        :col-2 :ends})
+
+(def replace_qualifiers {:col-0 :description
+                         :col-1 :specification})
+
+(def data "/home/yosh/datafiles/merlin.xml")
+
+(defn str>double [s] ;; ;returnes the first string number as an integer
+  (Double. (re-find  #"\d+" s )))
+
+(defn parseXML [ file col_name]
+  (vec (for [x (xml-seq (xml/parse( java.io.File. file)))
+             :when (= col_name (:tag x))]
+         (first (:content x)))))
+
+(defn annotate [data col_names col_replace]
+  (->> (map #(parseXML data %) (vec (keys col_names)))
+       (apply i/conj-cols)
+       (i/rename-cols col_replace)))
+
+(def annotation (annotate data col_names replace_col_names))
+(def qual_inc (annotate data qualifiers replace_qualifiers))
+
+(distinct (i/$ :description qual_inc))
+
+(def ld (i/$where {:feature {:$eq "gene" }} annotation))
+(def ld (i/$where {:description {:$eq "gene" }} qual_inc))
+
+(defn load-xml-data [xml-file first-data next-data]
+  (let [data-map (fn [node]
+                   [(:tag node) (first (:content node))])]
+    (->>
+     (xml/parse xml-file)
+     zip/xml-zip
+     first-data
+     (iterate next-data)
+     (take-while #(not (nil? %)))
+     (map zip/children)
+     (map #(mapcat data-map %))
+     (map #(apply array-map %))
+     i/to-dataset)))
+
+
+
+
