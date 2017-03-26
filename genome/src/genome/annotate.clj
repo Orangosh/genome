@@ -39,20 +39,20 @@
   (Integer. (re-find  #"\d+" s )))
 
 (defn str>integercol [col_name_in col_name_out file]
-  ""
+  "adds integers columns "
   (->> file
        (i/add-derived-column
         col_name_out
         [col_name_in]
         #(str>integer %))))
 
-(def integered (->> annotation
+(def integrated (->> annotation
                     (str>integercol :starts :starts_int)
                     (str>integercol :ends   :ends_int)))
 
 (def forwerd_seq
-  (let [file (i/$where (i/$fn [  starts_double ends_double] 
-                              (< starts_double ends_double)) i)]
+  (let [file (i/$where (i/$fn [  starts_int ends_int] 
+                              (< starts_int ends_int)) integrated)]
     (->> file
          (i/add-derived-column
           :forwerd_range
@@ -60,8 +60,8 @@
           #(range %1 %2)))))
 
 (def complement_seq
-  (let [file (i/$where (i/$fn [  starts_double ends_double] 
-                              (> starts_double ends_double)) i)]
+  (let [file (i/$where (i/$fn [  starts_int ends_int] 
+                              (> starts_int ends_int)) integrated)]
     (->> file
          (i/add-derived-column
           :complement_range
@@ -76,7 +76,7 @@
 (def hi (vec ( flatten (i/$ :complement_range complement_seq))))
 
 (defn upd-vec [input-vector ids new-values]
-  ""
+  "interleavs all trues into vector"
   (apply assoc input-vector (interleave ids new-values)))
 
 (def gi (upd-vec (bool-vec 235000 false) hi (bool-vec (count hi) true)))
