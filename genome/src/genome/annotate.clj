@@ -2,23 +2,19 @@
   (require [clojure.java.io :as io]
            [incanter.core :as i]
            [incanter.stats :as st]
-           [clojure.xml :as xml]
-           [clojure.zip :as zip]))
+           [incanter.io :as ii ]
+           [clojure.xml :as xml]))
 
 ;; wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_006273.2&retmode=xml"
 ;; mv efetch.fcgi?db=nuccore\&id=NC_006273.2\&retmode=xml merlin.xm
 
 (def data "/home/yosh/datafiles/merlin.xml")
 
-(def col_names {:GBFeature_key :feature
-                :GBInterval_from :starts
-                :GBInterval_to :ends})
+(def col_names [:GBFeature_key :GBInterval_from :GBInterval_to])
 
 (def replace_col_names {:col-0 :feature
                         :col-1 :starts
                         :col-2 :ends})
-
-
 
 (defn parseXML [ file col_name]
   ""
@@ -28,7 +24,7 @@
 
 (defn annotate [data col_names col_replace]
   ""
-  (->> (map #(parseXML data %) (vec (keys col_names)))
+  (->> (map #(parseXML data %) col_names)
        (apply i/conj-cols)
        (i/rename-cols col_replace)))
 
@@ -36,7 +32,7 @@
 
 (defn str>integer [s]
   "returnes the first string number as an integer"
-  (Integer. (re-find  #"\d+" s )))
+  (-  (Integer. (re-find  #"\d+" s )) 1254))
 
 (defn str>integercol [col_name_in col_name_out file]
   "adds integers columns "
@@ -46,9 +42,11 @@
         [col_name_in]
         #(str>integer %))))
 
-(def integrated (->> annotation
+(def integrate_select (->> annotation
                     (str>integercol :starts :starts_int)
                     (str>integercol :ends   :ends_int)))
+
+(def integrated (i/$where {:feature {:$eq "mRNA"}} integrate_select))
 
 (def forwerd_seq
   (let [file (i/$where (i/$fn [  starts_int ends_int] 
@@ -68,17 +66,25 @@
           [:ends_int :starts_int]
           #(range %1 %2)))))
 
-(defn bool-vec [file bool]
+(defn bool-vec [vec_size bool]
   "creates a vector of false at vec-size"
-  (let [vec-size (i/nrow file)]
-       (vec (take vec-size (repeat bool)))))
+  (vec (take vec_size (repeat bool))))
 
-(def hi (vec ( flatten (i/$ :complement_range complement_seq))))
+(def hi (vec ( flatten (i/$ :forwerd_range forwerd_seq))))
 
 (defn upd-vec [input-vector ids new-values]
   "interleavs all trues into vector"
   (apply assoc input-vector (interleave ids new-values)))
 
-(def gi (upd-vec (bool-vec 235000 false) hi (bool-vec (count hi) true)))
+(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
+
+(def gi (upd-vec (bool-vec (i/nrow incar) false) (vec hi) (bool-vec (count hi) true)))
+
+(def added
+  (i/add-column
+   :revers
+   gi
+   incar))
 
 
+g

@@ -19,10 +19,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn -main [file_in file_out]
-  (println "Wellcome to clojure- starting incanter")
+  (println "Welcome to clojure- starting incanter")
   (gd/create-db file_in)
 
-  (println "Creating first concensus")
+  (println "Creating first consensus")
   (def conded (cv/consensus gd/finalized cv/consus_un))
 
   (println "Correcting read errors")
@@ -36,10 +36,10 @@
   (println "Calculating folded allele frequency spectra")
   (def sfsd (p/SFS pied p/folded-SFS))
 
-  (println "adding negetive strend")
+  (println "adding negative strand")
   (def neg_stranded (da/pos>neg sfsd :consus_un :negsus_un))
 
-  (println "adding concensus amino acids")
+  (println "adding consensus amino acids")
   (def aaadded (da/nuc>aa neg_stranded :consus_un :negsus_un))
 
   (println "removing INDELs")
