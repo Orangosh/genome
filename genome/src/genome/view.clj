@@ -16,7 +16,7 @@
          :pie
          :x-label "Position"
          :y-label "diversity"
-         :title "02-519Pb AKA''Blip'"
+         :title "Pi win size"
                                         ;:legend true
          :data pied)))
 
@@ -51,3 +51,25 @@
          :title "02-519Pb AKA''Blip'"
                                         ;:legend true
          :data (i/$ (range 0 20) :all j)))
+
+
+(def idf2 (i/to-dataset (vec gs/binned2)))
+(def idf (i/to-dataset (vec gs/binned)))
+
+(i/view (c/xy-plot
+         :col-0
+         :col-1
+         :x-label "frequency"
+         :y-label "occurance"
+         :title "SFS bin 100"
+                                        ;:legend true
+         :data idf2))
+
+(i/view (c/xy-plot
+         :col-0
+         :col-1
+         :x-label "frequency"
+         :y-label "occurance"
+         :title "SFS bin 10"
+                                        ;:legend true
+         :data idf))
