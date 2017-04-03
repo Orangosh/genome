@@ -44,7 +44,10 @@
 
 
 
-(def b (i/$ [:loc :Apois :Tpois :Gpois :Cpois :Apoisb :Tpoisb :Gpoisb :Cpoisb] a)) 
+(def b (i/$ [:loc :pi1 :pi2
+             :A1 :T1 :G1 :C1
+             :A2 :T2 :G2 :C2] a)) 
+(def nu (i/$where {:pi1 {:$ne 0.0}} (i/$where {:pi2 {:$ne 0.0}} b)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING PIPELINE
