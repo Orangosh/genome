@@ -49,8 +49,8 @@
   (gs/stat-report sfsd)
 
   (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names row_cleaned))])
-    (csv/write-csv f-out (i/to-list row_cleaned))))
+    (csv/write-csv f-out [(map name (i/col-names aaadded))])
+    (csv/write-csv f-out (i/to-list aaadded))))
 
 
 (defn ready []
