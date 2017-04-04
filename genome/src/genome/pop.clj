@@ -22,7 +22,7 @@
                  (* A G) (* G C))
               (/ (* cov (- cov 1))
                  2)))
-    0))
+    0.0))
 
 (def pi_un [:pi_un [:c_cov :Tun :Aun :Cun :Gun]]);for variants calling
 (def pi_pois [:pi_pois [:c_cov :Tpois :Apois :Cpois :Gpois]]);after variants
@@ -79,7 +79,7 @@
 
 (defn folded-SFS [mean_cov ref c_cov T A C G] 
   (if (= 0 c_cov)
-    0
+    0.0
     (->> [T A C G]
          sort
          reverse
