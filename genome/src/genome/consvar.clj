@@ -69,6 +69,14 @@
          (pois-correct :Cun :Cpois p)
          (pois-correct :Gun :Gpois p))))
 
+(defn calc-coved [file]
+  "Calculation corrected coverage"
+  (->> file
+       (i/add-derived-column
+        :p_cov
+        [:Tun :Aun :Gun :Cun]
+        #(+ %1 %2 %3 %4))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CALL VARIANTS 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

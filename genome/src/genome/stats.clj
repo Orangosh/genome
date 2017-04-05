@@ -40,4 +40,5 @@
   (println "folded and binned (10) SFS " binned))
 
 
-(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
+;(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
+

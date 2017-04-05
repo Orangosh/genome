@@ -76,15 +76,10 @@
   "interleavs all trues into vector"
   (apply assoc input-vector (interleave ids new-values)))
 
-(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
+;(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
 
-(def gi (upd-vec (bool-vec (i/nrow incar) false) (vec hi) (bool-vec (count hi) true)))
+;(def gi (upd-vec (bool-vec (i/nrow incar) false) (vec hi) (bool-vec (count hi) true)))
 
-(def added
-  (i/add-column
-   :revers
-   gi
-   incar))
+;(def added  (i/add-column gi incar))
 
 
-g
