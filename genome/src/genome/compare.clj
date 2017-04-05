@@ -60,13 +60,6 @@
               :p_cov :cov2 :pi_pois :pi2})
 
 
-(def sample3 {:Tpois :T3 :Tpois-per :Tper3
-              :Cpois :C3 :Cpois-per :Cper3
-              :Apois :A3 :Apois-per :Aper3
-              :Gpois :G3 :Gpois-per :Gper3
-              :p_cov :cov3 :pi_pois :pi3})
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,23 +76,20 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def p_covda (calc-coved dat-a))
-(def p_covdb (calc-coved dat-b))
-
-(def snp_a (add-snp-precent p_covda))
-(def snp_b (add-snp-precent p_covdb))
-
-(def united (unite snp_b snp_a))
-
-(def filtered (i/$ [:loc :cov1
-                    :A1 :Aper1 :T1 :Tper1
-                    :G1 :Gper1 :C1 :Cper1 :pi1
-                    :cov2
-                    :A2 :Aper2 :T2 :Tper2
-                    :G2 :Gper2 :C2 :Cper2 :pi2]
-                   united)) 
+(defn create [file1 file2]
+  (let [p_covd1 (calc-coved file1)
+        p_covd2 (calc-coved file2)
+        snp1   (add-snp-precent p_covd1)
+        snp2   (add-snp-precent p_covd1)]
+    (->>(unite snp1 snp1)
+        (i/$ [:loc :cov1
+              :A1 :Aper1 :T1 :Tper1
+              :G1 :Gper1 :C1 :Cper1 :pi1
+              :cov2
+              :A2 :Aper2 :T2 :Tper2
+              :G2 :Gper2 :C2 :Cper2 :pi2])))) 
 
 (def comon_pied (i/$where {:pi1 {:$ne 0.0}} (i/$where {:pi2 {:$ne 0.0}} b)))
 
 ;(def c (i/$ [:cov1 :Tpois :Tpois-precent  :Cpois :Cpois-precent  :Apois :Apois-precent  :Gpois :Gpois-precent] b))
-
+  
