@@ -118,7 +118,7 @@
       (i/$ [:loc :cov1 :pi1 :cov2 :pi2])
       (i/add-derived-column
        :gap
-       [:pi1 :pi2]
+       [:pi2 :pi1]
        #(- %1 %2))))
 
 
@@ -135,3 +135,28 @@
 (def S79-Pa (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pa.inc" :header true))
 (def S79-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pb.inc" :header true))
 (def S79-M (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-M.inc" :header true))
+
+
+(def S19-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pb.inc" :header true))
+(def S19-Pc (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pc.inc" :header true))
+(def S19-Pd (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pd.inc" :header true))
+(def S19-S (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-S1a.inc" :header true))
+
+(defn look3 [early>inter early>late early>mom_sib]
+  (-> (c/xy-plot
+       :loc
+       :gap
+       :x-label "frequency"
+       :y-label "Location"
+       :title "Change in nucelotide diversity per site between 2 samples"
+       :data early>inter) 
+      (c/add-lines
+       :loc
+       :gap
+       :data early>late)
+      (c/add-lines
+       :loc
+       :gap
+       :data early>mom_sib)    
+      (i/view)))
+    
