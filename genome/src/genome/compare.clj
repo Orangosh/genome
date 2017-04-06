@@ -90,8 +90,15 @@
               :A2 :Afq2 :T2 :Tfq2
               :G2 :Gfq2 :C2 :Cfq2 :pi2])))) 
 
+(defn variants [file1 file2]
+  "Shows alleles from two samples at same site"
+  (->>(create-dataset file1 file2)
+      (i/$ [:loc
+            :cov1 :A1 :T1 :G1 :C1 :pi1
+            :cov2 :A2 :T2 :G2 :C2 :pi2])))
+
 (defn allele-change [file1 file2]
-  "compares all alleles frequencies between two sites"
+  "compares all alleles frequencies from two samples at  same site"
   (->>(create-dataset file1 file2)
       (i/$ [:loc
             :cov1 :Afq1 :Tfq1 :Gfq1 :Cfq1
