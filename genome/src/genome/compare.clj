@@ -114,16 +114,17 @@
        [:pi1 :pi2]
        #(- %1 %2))))
 
+
+(defn look [file]
+  (i/view (c/xy-plot
+           :loc
+           :gap
+           :x-label "frequency"
+           :y-label "Location"
+           :title "Change in nucelotide diversity per site between 2 samples"
+           ;:legend true
+           :data file)))
+
 (def S79-Pa (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pa.inc" :header true))
 (def S79-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pb.inc" :header true))
 (def S79-M (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-M.inc" :header true))
-
-
-(i/view (c/xy-plot
-         :loc
-         :gap
-         :x-label "frequency"
-         :y-label "Location"
-         :title "Change in nucelotide diversity per site between 2 samples"
-         ;:legend true
-         :data idf))
