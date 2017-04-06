@@ -101,10 +101,8 @@
                       (i/$ [:loc :Cfq1 :Cfq2]  %)
                       (i/$ [:loc :Gfq1 :Gfq2]  %) ))
       (i/rename-cols {:Afq1 :fq1 :Afq2 :fq2})
-      (i/$where (or {:fq2 {:$ne 0.0}}
-                    {:fq1 {:$ne 0.0}} ))
-      (i/$where (or {:fq2 {:$ne 1.0}}
-                    {:fq1 {:$ne 1.0}} ))
+      (i/$where (i/$fn [fq1 fq2] (or (> fq1 0.0) (> fq2 0.0)))) 
+      (i/$where (i/$fn [fq1 fq2] (or (< fq1 1.0) (< fq2 1.0))))                    
       (i/$order :loc :asc)))
 
 (defn diversity-change [file1 file2]
@@ -115,3 +113,17 @@
        :gap
        [:pi1 :pi2]
        #(- %1 %2))))
+
+(def S79-Pa (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pa.inc" :header true))
+(def S79-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pb.inc" :header true))
+(def S79-M (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-M.inc" :header true))
+
+
+(i/view (c/xy-plot
+         :loc
+         :gap
+         :x-label "frequency"
+         :y-label "Location"
+         :title "Change in nucelotide diversity per site between 2 samples"
+         ;:legend true
+         :data idf))
