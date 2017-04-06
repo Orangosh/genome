@@ -23,15 +23,15 @@
        (i/add-derived-column
         :p_cov
         [:Tpois :Apois :Gpois :Cpois]
-        #(+ %1 %2 %3 %4))))
+        #(double (+ %1 %2 %3 %4)))))
 
 (defn snp-precent [snp file]
   "snp sould be the string of the keyword"
   (->> file
        (i/add-derived-column
-        (keyword (str snp "-per"))
+        (keyword (str snp "-fq"))
         [(keyword snp) :p_cov]
-        #(if (= %2 0)
+        #(if (= %2 0.0)
            0.0
            (double (/ %1 %2))))))
 
@@ -47,16 +47,16 @@
 ;DEFINE NEW COLUMN NAME
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sample1 {:Tpois :T1 :Tpois-per :Tper1
-              :Cpois :C1 :Cpois-per :Cper1
-              :Apois :A1 :Apois-per :Aper1
-              :Gpois :G1 :Gpois-per :Gper1
+(def sample1 {:Tpois :T1 :Tpois-fq :Tfq1
+              :Cpois :C1 :Cpois-fq :Cfq1
+              :Apois :A1 :Apois-fq :Afq1
+              :Gpois :G1 :Gpois-fq :Gfq1
               :p_cov :cov1 :pi_pois :pi1})
 
-(def sample2 {:Tpois :T2 :Tpois-per :Tper2
-              :Cpois :C2 :Cpois-per :Cper2
-              :Apois :A2 :Apois-per :Aper2
-              :Gpois :G2 :Gpois-per :Gper2
+(def sample2 {:Tpois :T2 :Tpois-fq :Tfq2
+              :Cpois :C2 :Cpois-fq :Cfq2
+              :Apois :A2 :Apois-fq :Afq2
+              :Gpois :G2 :Gpois-fq :Gfq2
               :p_cov :cov2 :pi_pois :pi2})
 
 
@@ -76,20 +76,42 @@
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn create [file1 file2]
+(defn create-dataset [file1 file2]
+  "creates a dataset which contains all sites with allele frequency"
   (let [p_covd1 (calc-coved file1)
         p_covd2 (calc-coved file2)
         snp1   (add-snp-precent p_covd1)
-        snp2   (add-snp-precent p_covd1)]
-    (->>(unite snp1 snp1)
+        snp2   (add-snp-precent p_covd2)]
+    (->>(unite snp1 snp2)
         (i/$ [:loc :cov1
-              :A1 :Aper1 :T1 :Tper1
-              :G1 :Gper1 :C1 :Cper1 :pi1
+              :A1 :Afq1 :T1 :Tfq1
+              :G1 :Gfq1 :C1 :Cfq1 :pi1
               :cov2
-              :A2 :Aper2 :T2 :Tper2
-              :G2 :Gper2 :C2 :Cper2 :pi2])))) 
+              :A2 :Afq2 :T2 :Tfq2
+              :G2 :Gfq2 :C2 :Cfq2 :pi2])))) 
 
-(def comon_pied (i/$where {:pi1 {:$ne 0.0}} (i/$where {:pi2 {:$ne 0.0}} b)))
+(defn allele-change [file1 file2]
+  "compares all alleles frequencies between two sites"
+  (->>(create-dataset file1 file2)
+      (i/$ [:loc
+            :cov1 :Afq1 :Tfq1 :Gfq1 :Cfq1
+            :cov2 :Afq2 :Tfq2 :Gfq2 :Cfq2])
+      ( #(i/conj-rows (i/$ [:loc :Afq1 :Afq2]  %)
+                      (i/$ [:loc :Tfq1 :Tfq2]  %)
+                      (i/$ [:loc :Cfq1 :Cfq2]  %)
+                      (i/$ [:loc :Gfq1 :Gfq2]  %) ))
+      (i/rename-cols {:Afq1 :fq1 :Afq2 :fq2})
+      (i/$where (or {:fq2 {:$ne 0.0}}
+                    {:fq1 {:$ne 0.0}} ))
+      (i/$where (or {:fq2 {:$ne 1.0}}
+                    {:fq1 {:$ne 1.0}} ))
+      (i/$order :loc :asc)))
 
-;(def c (i/$ [:cov1 :Tpois :Tpois-precent  :Cpois :Cpois-precent  :Apois :Apois-precent  :Gpois :Gpois-precent] b))
-  
+(defn diversity-change [file1 file2]
+  "compares diversity change between two sites"
+  (->>(create-dataset file1 file2)
+      (i/$ [:loc :cov1 :pi1 :cov2 :pi2])
+      (i/add-derived-column
+       :gap
+       [:pi1 :pi2]
+       #(- %1 %2))))

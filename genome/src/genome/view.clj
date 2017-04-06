@@ -62,7 +62,7 @@
          :x-label "frequency"
          :y-label "occurance"
          :title "SFS bin 100"
-                                        ;:legend true
+        ;:legend true
          :data idf2))
 
 (i/view (c/xy-plot
@@ -71,5 +71,5 @@
          :x-label "frequency"
          :y-label "occurance"
          :title "SFS bin 10"
-                                        ;:legend true
+         ;:legend true
          :data idf))
