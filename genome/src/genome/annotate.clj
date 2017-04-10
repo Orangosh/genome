@@ -37,26 +37,35 @@
         #(only-existing id %))))
 
 
-(defn get-list [file]
-  "create a file of the relevant data"
-  (->> (i/sel file :cols [:type :pt1 :pt2])
+(defn get-list [file attribution]
+  "create a file of the relevant data attribution :type/:gene"
+  (->> (i/sel file :cols [attribution :pt1 :pt2])
        i/to-vect))
 
 
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;CREATING A REFFERENCE DATASET
+;CREATING AN EMPTY REFFERENCE DATASET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (defn get-col-name [file attribute]
   "gets a vector of distinct col-names"
-  (->> file
-       (i/$ attribute)
-       distinct
-       (map keyword)
-       vec))
+  (let [pos (->> file
+                 (i/$ attribute)
+                 distinct
+                 (map #(str % "+"))
+                 (map keyword)
+                 vec)
+        neg (->> file
+                 (i/$ attribute)
+                 distinct
+                 (map #(str % "-"))
+                 (map keyword)
+                 vec)]
+    (println pos)
+    (concat pos neg [:loc :gene+ :gene-])))
+
 
 (defn empty-ref-db [file attribute size]
   "creates an empty ref dataset with col-names"
@@ -71,15 +80,20 @@
           :loc
           (range 1 (inc size))))))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;FILLING THE REFFERENCE DATASET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn add-data [new-type old-type loc pt1 pt2]
   "returns colname if in range"
   (if (and (>= loc pt1) (<= loc pt2))
     (name new-type)
     old-type))
 
-(defn add-annotations [file list]
+(defn add-annotations [file list posneg]
   "adds annotations to empty ref dataset"
-  (let [type (keyword (first list))
+  (let [type (keyword (str (first list) posneg))
         pt1 (second list)
         pt2 (last list)]
     (->> file
@@ -88,9 +102,31 @@
           [type :loc]
           #(add-data type %1 %2 pt1 pt2)))))
 
-(defn creat-one [file list]
-  (add-annotations file list)
-  (recur file (rest list)))
+(defn add-annotations-gene [file list nontype]
+  "adds annotations to empty ref dataset"
+  (let [type (keyword (first list))
+        pt1 (second list)
+        pt2 (last list)]
+    (->> file
+         (i/add-derived-column
+          nontype
+          [nontype :loc]
+          #(add-data type %1 %2 pt1 pt2)))))
+
+
+(defn creat-one [file list posneg]
+  (let [new-file (add-annotations file (first list) posneg)
+        new-list (rest list)]
+    (if (< 1 (count list))
+      (recur new-file new-list posneg)
+      file)))
+
+(defn creat-one-gene [file list nontype]
+  (let [new-file (add-annotations-gene file (first list) nontype)
+        new-list (rest list)]
+    (if (< 1 (count list))
+      (recur new-file new-list nontype)
+      file)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -119,11 +155,17 @@
   (def scrubed
     (->> attributed
          (i/$ [:seqid :gene :type :strand :pt1 :pt2 ])))
-  (def empt (empty-ref-db scrubed :type  235646))
-  (def ji (creat-one empt (get-list scrubed))))
+  (def empt       (empty-ref-db scrubed :type  235646))
+  (def scrubed+   (i/$where {:strand {:$eq "+"}} scrubed))
+  (def scrubed-   (i/$where {:strand {:$eq "-"}} scrubed))
+  (def rescrubed  (i/$where {:type {:$eq "gene"}} scrubed))
+  (def rescrubed+ (i/$where {:strand {:$eq "+"}} rescrubed))
+  (def rescrubed- (i/$where {:strand {:$eq "-"}} rescrubed))
+  (def ji+ (creat-one empt     (get-list scrubed+ :type) "+"))
+  (def ji- (creat-one ji+      (get-list scrubed- :type) "-"))
+  (def h+  (creat-one-gene ji- (get-list rescrubed+ :gene) :gene+))
+  (def h+- (creat-one-gene h+  (get-list rescrubed- :gene) :gene-)))
 
 
 
-
-
-
+    
