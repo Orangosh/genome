@@ -119,6 +119,37 @@
   (trampoline merge_contigs ficontigs k))
 
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Old bunch of thing that may serve me in future
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_006273.2&retmode=xml"
+;; mv efetch.fcgi?db=nuccore\&id=NC_006273.2\&retmode=xml merlin.xml
+
+(defn parseXML [ file col_name]
+  ""
+  (vec (for [x (xml-seq (xml/parse( java.io.File. file)))
+             :when (= col_name (:tag x))]
+         (first (:content x)))))
+
+(defn annotate [data col_names col_replace]
+  ""
+  (->> (map #(parseXML data %) col_names)
+       (apply i/conj-cols)
+       (i/rename-cols col_replace)))
+
+(defn str>integer [s]
+  "returnes the first string number as an integer"
+  (Integer. (re-find  #"\d+" s )))
+
+(defn str>integercol [col_name_in col_name_out file]
+  "adds integers columns"
+  (->> file
+       (i/add-derived-column
+        col_name_out
+        [col_name_in]
+        #(str>integer %))))
   
 ;transition maps for RNA and rev DNA to Protein
 (def RNA>protein {"UUU" "F" "UUC" "F" "UUA" "L" "UUG" "L"

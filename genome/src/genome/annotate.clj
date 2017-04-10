@@ -1,85 +1,129 @@
 (ns genome.annotate
   (require [clojure.java.io :as io]
+           [clojure.string :as s]
            [incanter.core :as i]
            [incanter.stats :as st]
            [incanter.io :as ii ]
            [clojure.xml :as xml]))
 
-;; wget "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_006273.2&retmode=xml"
-;; mv efetch.fcgi?db=nuccore\&id=NC_006273.2\&retmode=xml merlin.xm
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ARRANGING A GFF3 FILE INTO A DATASET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def data "/home/yosh/datafiles/merlin.xml")
+(defn pairs [file]
+  "parses through the ID line of gff3 file and creates a map "
+  (->> file
+         (re-seq  #"[^;]*")
+         (map #(re-seq #"[^=]*" %))
+         (map (fn [x] (filter #(not= "" %) x)))
+         (filter #(= 2 (count %)))
+         flatten
+         (apply hash-map)))
 
-(def col_names [:GBFeature_key :GBInterval_from :GBInterval_to])
+(defn only-existing [id file]
+  "puts a value if there is one if not a -"
+  (let [value ((pairs file) id)]
+    (if (= nil value)
+      "-"
+      value)))
 
-(def replace_col_names {:col-0 :feature
-                        :col-1 :starts
-                        :col-2 :ends})
 
-(defn parseXML [ file col_name]
-  ""
-  (vec (for [x (xml-seq (xml/parse( java.io.File. file)))
-             :when (= col_name (:tag x))]
-         (first (:content x)))))
-
-(defn annotate [data col_names col_replace]
-  ""
-  (->> (map #(parseXML data %) col_names)
-       (apply i/conj-cols)
-       (i/rename-cols col_replace)))
-
-(def annotation (annotate data col_names replace_col_names))
-
-(defn str>integer [s]
-  "returnes the first string number as an integer"
-  (-  (Integer. (re-find  #"\d+" s )) 1254))
-
-(defn str>integercol [col_name_in col_name_out file]
-  "adds integers columns "
+(defn  add-id [id file]
+  "here you choose what attribute you would like to parse"
   (->> file
        (i/add-derived-column
-        col_name_out
-        [col_name_in]
-        #(str>integer %))))
+        (keyword id)
+        [:attributes]
+        #(only-existing id %))))
 
-(def integrate_select (->> annotation
-                    (str>integercol :starts :starts_int)
-                    (str>integercol :ends   :ends_int)))
 
-(def integrated (i/$where {:feature {:$eq "mRNA"}} integrate_select))
+(defn get-list [file]
+  "create a file of the relevant data"
+  (->> (i/sel file :cols [:type :pt1 :pt2])
+       i/to-vect))
 
-(def forwerd_seq
-  (let [file (i/$where (i/$fn [  starts_int ends_int] 
-                              (< starts_int ends_int)) integrated)]
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;CREATING A REFFERENCE DATASET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn get-col-name [file attribute]
+  "gets a vector of distinct col-names"
+  (->> file
+       (i/$ attribute)
+       distinct
+       (map keyword)
+       vec))
+
+(defn empty-ref-db [file attribute size]
+  "creates an empty ref dataset with col-names"
+  (let [header (get-col-name file attribute)]
+    (->> (i/dataset header (->> (repeat "-")
+                                (take (count header))
+                                vec
+                                repeat
+                                (take size)
+                                vec))
+         (i/add-column
+          :loc
+          (range 1 (inc size))))))
+
+(defn add-data [new-type old-type loc pt1 pt2]
+  "returns colname if in range"
+  (if (and (>= loc pt1) (<= loc pt2))
+    (name new-type)
+    old-type))
+
+(defn add-annotations [file list]
+  "adds annotations to empty ref dataset"
+  (let [type (keyword (first list))
+        pt1 (second list)
+        pt2 (last list)]
     (->> file
          (i/add-derived-column
-          :forwerd_range
-          [:starts_int :ends_int]
-          #(range %1 %2)))))
+          type
+          [type :loc]
+          #(add-data type %1 %2 pt1 pt2)))))
 
-(def complement_seq
-  (let [file (i/$where (i/$fn [  starts_int ends_int] 
-                              (> starts_int ends_int)) integrated)]
-    (->> file
-         (i/add-derived-column
-          :complement_range
-          [:ends_int :starts_int]
-          #(range %1 %2)))))
+(defn creat-one [file list]
+  (add-annotations file list)
+  (recur file (rest list)))
 
-(defn bool-vec [vec_size bool]
-  "creates a vector of false at vec-size"
-  (vec (take vec_size (repeat bool))))
 
-(def hi (vec ( flatten (i/$ :forwerd_range forwerd_seq))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;OPPORATION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn upd-vec [input-vector ids new-values]
-  "interleavs all trues into vector"
-  (apply assoc input-vector (interleave ids new-values)))
+(defn gff3>dataset []
+  (println "Opening a TSV file") 
+  (def reference (ii/read-dataset "/home/yosh/datafiles/genes/merlin.gff3" :delim \tab))
+  
+  (println "Renameing colums")
+  (def renamed (i/rename-cols
+                {:col0     :seqid
+                 :col1     :source
+                 :col2     :type
+                 :col3     :pt1
+                 :col4     :pt2
+                 :col5     :score
+                 :col6     :strand
+                 :col7     :phase
+                 :col8     :attributes}
+                reference))
+  
+  (def  attributed (add-id "gene" renamed))
+  
+  (def scrubed
+    (->> attributed
+         (i/$ [:seqid :gene :type :strand :pt1 :pt2 ])))
+  (def empt (empty-ref-db scrubed :type  235646))
+  (def ji (creat-one empt (get-list scrubed))))
 
-;(def incar (ii/read-dataset "/home/yosh/datafiles/incanted" :header true))
 
-;(def gi (upd-vec (bool-vec (i/nrow incar) false) (vec hi) (bool-vec (count hi) true)))
 
-;(def added  (i/add-column gi incar))
+
 
 
