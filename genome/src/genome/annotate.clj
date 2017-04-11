@@ -4,6 +4,7 @@
            [incanter.core :as i]
            [incanter.stats :as st]
            [incanter.io :as ii ]
+           [clojure.data.csv :as csv]
            [clojure.xml :as xml]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,7 +64,6 @@
                  (map #(str % "-"))
                  (map keyword)
                  vec)]
-    (println pos)
     (concat pos neg [:loc :gene+ :gene-])))
 
 
@@ -91,7 +91,7 @@
     (name new-type)
     old-type))
 
-(defn add-annotations [file list posneg]
+(defn add-annotations [list posneg file]
   "adds annotations to empty ref dataset"
   (let [type (keyword (str (first list) posneg))
         pt1 (second list)
@@ -102,7 +102,7 @@
           [type :loc]
           #(add-data type %1 %2 pt1 pt2)))))
 
-(defn add-annotations-gene [file list nontype]
+(defn add-annotations-gene [list nontype file]
   "adds annotations to empty ref dataset"
   (let [type (keyword (first list))
         pt1 (second list)
@@ -114,18 +114,18 @@
           #(add-data type %1 %2 pt1 pt2)))))
 
 
-(defn creat-one [file list posneg]
-  (let [new-file (add-annotations file (first list) posneg)
+(defn creat-one [list posneg file]
+  (let [new-file (add-annotations (first list) posneg file)
         new-list (rest list)]
     (if (< 1 (count list))
-      (recur new-file new-list posneg)
+      (recur new-list posneg new-file)
       file)))
 
-(defn creat-one-gene [file list nontype]
-  (let [new-file (add-annotations-gene file (first list) nontype)
+(defn creat-one-gene [list nontype file]
+  (let [new-file (add-annotations-gene (first list) nontype file)
         new-list (rest list)]
     (if (< 1 (count list))
-      (recur new-file new-list nontype)
+      (recur new-list nontype new-file)
       file)))
 
 
@@ -133,39 +133,41 @@
 ;OPPORATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn gff3>dataset []
-  (println "Opening a TSV file") 
-  (def reference (ii/read-dataset "/home/yosh/datafiles/genes/merlin.gff3" :delim \tab))
+(defn gff3>dataset [file_in file_out]
+  (def reference (ii/read-dataset file_in :delim \tab))
   
-  (println "Renameing colums")
   (def renamed (i/rename-cols
-                {:col0     :seqid
-                 :col1     :source
-                 :col2     :type
-                 :col3     :pt1
-                 :col4     :pt2
-                 :col5     :score
-                 :col6     :strand
-                 :col7     :phase
-                 :col8     :attributes}
-                reference))
+                {:col0 :seqid    :col1 :source
+                 :col2 :type     :col3 :pt1
+                 :col4 :pt2      :col5 :score
+                 :col6 :strand   :col7 :phase
+                 :col8 :attributes} reference))
   
-  (def  attributed (add-id "gene" renamed))
-  
+  (def attributed (add-id "gene" renamed))
   (def scrubed
     (->> attributed
          (i/$ [:seqid :gene :type :strand :pt1 :pt2 ])))
-  (def empt       (empty-ref-db scrubed :type  235646))
   (def scrubed+   (i/$where {:strand {:$eq "+"}} scrubed))
   (def scrubed-   (i/$where {:strand {:$eq "-"}} scrubed))
   (def rescrubed  (i/$where {:type {:$eq "gene"}} scrubed))
   (def rescrubed+ (i/$where {:strand {:$eq "+"}} rescrubed))
   (def rescrubed- (i/$where {:strand {:$eq "-"}} rescrubed))
-  (def ji+ (creat-one empt     (get-list scrubed+ :type) "+"))
-  (def ji- (creat-one ji+      (get-list scrubed- :type) "-"))
-  (def h+  (creat-one-gene ji- (get-list rescrubed+ :gene) :gene+))
-  (def h+- (creat-one-gene h+  (get-list rescrubed- :gene) :gene-)))
 
+  (def annotated
+    (->> (empty-ref-db scrubed :type  (apply max (i/$ :pt2 scrubed)))
+         (creat-one      (get-list scrubed+   :type)  "+")
+         (creat-one      (get-list scrubed-   :type)  "-")
+         (creat-one-gene (get-list rescrubed+ :gene) :gene+)
+         (creat-one-gene (get-list rescrubed- :gene) :gene-)
+         i/col-name
+         distinct
+         sort
+         vec))
 
+  (with-open [f-out (io/writer file_out)]
+    (csv/write-csv f-out [(map name (i/col-names annotated))])
+    (csv/write-csv f-out (i/to-list annotated))))
 
-    
+                                        ;(gff3>dataset "/home/yosh/datafiles/genes/merlin.gff3"  "/home/yosh/datafiles/genes/merlin.inc")
+
+)
