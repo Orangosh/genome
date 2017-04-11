@@ -8,8 +8,6 @@
                  [incanter "1.5.7"]     
                  [org.clojure/data.csv "0.1.3"]
                  [semantic-csv "0.1.0"]
-                 [yieldbot/vizard "0.1.0"]
-                 [cljam "0.1.5"]
                  [org.clojure/data.zip "0.1.2"]]
   :jvm-opts ["-Xmx15g"]
   :main genome.core

@@ -1,17 +1,17 @@
 (ns genome.compare
-  (require [clojure.java.io :as io]
-           [incanter.core :as i]
-           [incanter.datasets :as id]
-           [incanter.io :as ii ]
-           [incanter.charts :as c]
-           [incanter.stats :as st]
-           [clojure.string :as s]
-           [clojure.data.csv :as csv]
-           [genome.database :as gd]
-           [genome.stats :as gs]
-           [genome.pop :as p]
-           [genome.consvar :as cv]
-           [genome.dna2aa :as da]))
+  (require [clojure.java.io   :as io ]
+           [incanter.core     :as i  ]
+           [incanter.datasets :as id ]
+           [incanter.io       :as ii ]
+           [incanter.charts   :as c  ]
+           [incanter.stats    :as st ]
+           [clojure.string    :as s  ]
+           [clojure.data.csv  :as csv]
+           [genome.database   :as gd ]
+           [genome.stats      :as gs ]
+           [genome.pop        :as p  ]
+           [genome.consvar    :as cv ]
+           [genome.dna2aa     :as da ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING SNP TREND
@@ -51,13 +51,19 @@
               :Cpois :C1 :Cpois-fq :Cfq1
               :Apois :A1 :Apois-fq :Afq1
               :Gpois :G1 :Gpois-fq :Gfq1
-              :p_cov :cov1 :pi_pois :pi1})
+              :p_cov :cov1 :pi_pois :pi1
+              :consus_un :p-sus1
+              :negsus_un :n-sus1
+              :aa_fwd :aa_fwd1 :aa_rev :aa_rev1})
 
 (def sample2 {:Tpois :T2 :Tpois-fq :Tfq2
               :Cpois :C2 :Cpois-fq :Cfq2
               :Apois :A2 :Apois-fq :Afq2
               :Gpois :G2 :Gpois-fq :Gfq2
-              :p_cov :cov2 :pi_pois :pi2})
+              :p_cov :cov2 :pi_pois :pi2
+              :consus_un :p-sus2
+              :negsus_un :n-sus2
+              :aa_fwd :aa_fwd2 :aa_rev :aa_rev2})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -83,19 +89,23 @@
         snp1   (add-snp-precent p_covd1)
         snp2   (add-snp-precent p_covd2)]
     (->>(unite snp1 snp2)
-        (i/$ [:loc :cov1
-              :A1 :Afq1 :T1 :Tfq1
-              :G1 :Gfq1 :C1 :Cfq1 :pi1
-              :cov2
-              :A2 :Afq2 :T2 :Tfq2
-              :G2 :Gfq2 :C2 :Cfq2 :pi2])))) 
+        (i/$ [:loc    :cov1   :pi1
+              :p-sus1 :n-sus1 :aa_fwd1 :aa_rev1
+              :A1     :Afq1   :T1     :Tfq1
+              :G1     :Gfq1   :C1     :Cfq1 
+                      :cov2   :pi2
+              :p-sus2 :n-sus2 :aa_fwd2 :aa_rev2
+              :A2     :Afq2   :T2     :Tfq2
+              :G2     :Gfq2   :C2     :Cfq2 ])))) 
 
 (defn variants [file1 file2]
   "Shows alleles from two samples at same site"
   (->>(create-dataset file1 file2)
       (i/$ [:loc
             :cov1 :A1 :T1 :G1 :C1 :pi1
-            :cov2 :A2 :T2 :G2 :C2 :pi2])))
+            :cov2 :A2 :T2 :G2 :C2 :pi2
+            :p-sus1  :p-sus2  :n-sus1  :n-sus2
+            :aa_fwd1 :aa_fwd2 :aa_rev1 :aa_rev2])))
 
 (defn allele-change [file1 file2]
   "compares all alleles frequencies from two samples at  same site"
@@ -122,55 +132,5 @@
        #(- %1 %2))))
 
 
-(defn look
-  "create a graph of the value comparison"
-  ([column file]
-   (i/view (c/xy-plot
-            :loc
-            column
-            :x-label "frequency"
-            :y-label "Location"
-            :title   "Change in nucelotide diversity per site between 2 samples"
-;:legend true
-            :data file)))
 
-  ([column early>inter early>late]
-   (-> (c/xy-plot
-        :loc
-        column
-        :x-label "frequency"
-        :y-label "Location"
-        :title   "Change in nucelotide diversity per site between 2 samples"
-        :data early>inter) 
-       (c/add-lines
-        :loc
-        column
-        :data early>late)
-       (i/view)))
-
-  ([column early>inter early>late early>mom_sib]
-    (-> (c/xy-plot
-         :loc
-         column
-         :x-label "frequency"
-         :y-label "Location"
-         :title   "Change in nucelotide diversity per site between 2 samples"
-         :data early>inter) 
-        (c/add-lines
-         :loc
-         column
-         :data early>late)
-        (c/add-lines
-         :loc
-         column
-         :data early>mom_sib)    
-        (i/view))))
     
- 
-(def S79-Pa (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pa.inc"  :header true))
-(def S79-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-Pb.inc"  :header true))
-(def S79-M  (ii/read-dataset "/home/yosh/datafiles/incanted_files/579-M.inc"   :header true))
-(def S19-Pb (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pb.inc"  :header true))
-(def S19-Pc (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pc.inc"  :header true))
-(def S19-Pd (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-Pd.inc"  :header true))
-(def S19-S  (ii/read-dataset "/home/yosh/datafiles/incanted_files/519-S1a.inc" :header true))
