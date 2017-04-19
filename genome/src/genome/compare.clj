@@ -77,11 +77,6 @@
     (i/$where {:A2 {:$ne nil}}
               (i/$join [:loc :loc] coled2 coled1))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn create-dataset [file1 file2]
   "creates a dataset which contains all sites with allele frequency"
   (let [p_covd1 (calc-coved file1)
@@ -97,6 +92,10 @@
               :p-sus2 :n-sus2 :aa_fwd2 :aa_rev2
               :A2     :Afq2   :T2     :Tfq2
               :G2     :Gfq2   :C2     :Cfq2 ])))) 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn variants [file1 file2]
   "Shows alleles from two samples at same site"

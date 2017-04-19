@@ -8,7 +8,8 @@
                  [incanter "1.5.7"]     
                  [org.clojure/data.csv "0.1.3"]
                  [semantic-csv "0.1.0"]
-                 [org.clojure/data.zip "0.1.2"]]
+                 [org.clojure/data.zip "0.1.2"]
+                 [org.clojure/tools.cli "0.3.5"]]
   :jvm-opts ["-Xmx15g"]
   :main genome.core
   :aot [genome.core])

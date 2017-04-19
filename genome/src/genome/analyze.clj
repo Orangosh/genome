@@ -2,6 +2,7 @@
   (require [clojure.java.io   :as io ]
            [incanter.core     :as i  ]
            [incanter.io       :as ii ]
+           [incanter.stats    :as st ]
            [genome.consvar    :as cv ]
            [genome.compare    :as gc ]
            [genome.annotate   :as ga ]))
@@ -25,8 +26,7 @@
 (defn variants-comparisson [file1 file2]
   (let [seq1 (m-get-set file1)
         seq2 (m-get-set file2)]
-    (->> (gc/variants seq1 seq2)
-         (i/$where (i/$fn [p-sus1 p-sus2] (not= p-sus1 p-sus2))) )))
+    (->> (gc/variants seq1 seq2))))
   (def m-variants-comparisson (memoize variants-comparisson))
 
 (defn annotate-compare [seq_dataset annotation]
@@ -35,6 +35,7 @@
         (i/$ [:loc :gene+ :gene- :mRNA+ :mRNA-   :cov1 :cov2
               :p-sus1     :p-sus2       :n-sus1  :n-sus2
               :aa_fwd1    :aa_fwd2      :aa_rev1 :aa_rev2])
+        (i/$where (i/$fn [p-sus1 p-sus2] (not= p-sus1 p-sus2)))
         (i/$where (i/$fn [cov1 cov2] (and (< 20 cov1) (< 20 cov2))))))
 (def m-annotate-compare (memoize annotate-compare))
 

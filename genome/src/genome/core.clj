@@ -1,18 +1,20 @@
 (ns genome.core
   (:gen-class)
-  (require [clojure.java.io :as io]
-           [incanter.core :as i]
-           [incanter.datasets :as id]
-           [incanter.io :as ii ]
-           [incanter.charts :as c]
-           [incanter.stats :as st]
-           [clojure.string :as s]
-           [clojure.data.csv :as csv]
-           [genome.database :as gd]
-           [genome.stats :as gs]
-           [genome.pop :as p]
-           [genome.consvar :as cv]
-           [genome.dna2aa :as da]))
+  (require [clojure.java.io   :as io ]
+           [clojure.string    :as s  ]
+           [clojure.data.csv  :as csv]
+           [clojure.tools.cli :as cli]
+           [incanter.core     :as i  ]
+           [incanter.datasets :as id ]
+           [incanter.io       :as ii ]
+           [incanter.charts   :as c  ]
+           [incanter.stats    :as st ]
+           [genome.database   :as gd ]
+           [genome.stats      :as gs ]
+           [genome.pop        :as p  ]
+           [genome.consvar    :as cv ]
+           [genome.dna2aa     :as da ]))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING PIPELINE
