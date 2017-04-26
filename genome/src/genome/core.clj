@@ -24,6 +24,8 @@
   (println "Welcome to clojure- starting incanter")
   (gd/create-db file_in)
 
+  ;; add conloc here
+
   (println "Creating first consensus")
   (def conded (cv/consensus gd/finalized cv/consus_un))
 
