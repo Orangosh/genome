@@ -112,10 +112,10 @@
       (i/$ [:loc
             :cov1 :Afq1 :Tfq1 :Gfq1 :Cfq1
             :cov2 :Afq2 :Tfq2 :Gfq2 :Cfq2])
-      ( #(i/conj-rows (i/$ [:loc :Afq1 :Afq2]  %)
-                      (i/$ [:loc :Tfq1 :Tfq2]  %)
-                      (i/$ [:loc :Cfq1 :Cfq2]  %)
-                      (i/$ [:loc :Gfq1 :Gfq2]  %) ))
+      ( #(i/conj-rows (i/$ [:cov1 :cov2 :loc :Afq1 :Afq2]  %)
+                      (i/$ [:cov1 :cov2 :loc :Tfq1 :Tfq2]  %)
+                      (i/$ [:cov1 :cov2 :loc :Cfq1 :Cfq2]  %)
+                      (i/$ [:cov1 :cov2 :loc :Gfq1 :Gfq2]  %) ))
       (i/rename-cols {:Afq1 :fq1 :Afq2 :fq2})
       (i/$where (i/$fn [fq1 fq2] (or (> fq1 0.0) (> fq2 0.0)))) 
       (i/$where (i/$fn [fq1 fq2] (or (< fq1 1.0) (< fq2 1.0))))                    
