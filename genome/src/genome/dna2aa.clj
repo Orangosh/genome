@@ -69,3 +69,57 @@
               (map DNA>protein)
               (replace {nil "-"}))
          )))); <-here file should be
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;GET READING FRAME
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-orf [CDS]
+  "Creats a seq of ORF from CDS column"
+  (->> CDS
+       (partition-by identity)
+       (map #(take (count %) (cycle (range 1 4))))))
+
+(defn add-orfs [file]
+  "Adds the ORF seq to the inc file"
+  (let [CDS+          (flatten (get-orf          (i/$ :CDS+ file))) 
+        CDS- (reverse (flatten (get-orf (reverse (i/$ :CDS- file)))))]
+    (->> (i/add-column :orf+ CDS+ file)
+         (i/add-column :orf- CDS-))))
+
+(defn aa-orf [orf amino-seq]
+  "Gets the codon sizes from get-orf"
+  (map #(repeat %1 %2)
+       (->> orf
+            (map #(partition-all 3 %))
+            (apply concat)
+            (map count))
+       amino-seq))
+
+(defn add-orf-aa [inc_file]
+  "Adds column with ORF for each seq"
+  (let [file    (add-orfs inc_file)
+        orf+    (get-orf (i/$ :CDS+ file)) 
+        orf-    (get-orf (reverse (i/$ :CDS- file)))
+        majorf+ (->> file
+                     (i/$where { :orf+ {:$eq 1}})
+                     (i/$ :maj_aa+))
+        minorf+ (->> file
+                     (i/$where { :orf+ {:$eq 1}})
+                     (i/$ :min_aa+))
+        majorf- (->> file
+                     (i/$where { :orf- {:$eq 1}})
+                     (i/$ :maj_aa-)
+                     reverse)
+        minorf- (->> file
+                     (i/$where { :orf- {:$eq 1}})
+                     (i/$ :min_aa-)
+                     reverse)]
+    (->> (i/add-column :majorf+
+                       (flatten (aa-orf orf+ majorf+)) file)
+         (i/add-column :minorf+
+                       (flatten (aa-orf orf+ minorf+)))
+         (i/add-column :majorf-
+                       (flatten (reverse (aa-orf orf- majorf-))))
+         (i/add-column :minorf-
+                       (flatten (reverse (aa-orf orf- minorf-)))))))
