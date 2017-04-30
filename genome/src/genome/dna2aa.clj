@@ -15,7 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;adds column of complementary DNA strand
-(defn pos>neg [file scanned_column column_name]
+(defn pos>neg [scanned_column column_name file]
   (let [complementary {"A" "T" "T" "A" "C" "G" "G" "C" "-" "-"}]
     (i/add-column
      column_name
@@ -28,25 +28,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;add columns with amino acid after transcription and translation.
-(defn nuc>aa [file scanned_fwd scanned_rev]
-  (let [DNA>protein {"AAA" "F" "AAG" "F" "AAT" "L" "AAC" "L"
-                     "AGA" "S" "AGG" "S" "AGT" "S" "AGC" "S"
-                     "ATA" "Y" "ATG" "Y" "ATT" "$" "ATC" "$"
-                     "ACA" "C" "ACG" "C" "ACT" "$" "ACC" "W" 
-                     "GAA" "L" "GAG" "L" "GAT" "L" "GAC" "L"
-                     "GGA" "P" "GGG" "P" "GGT" "P" "GGC" "P"
-                     "GTA" "H" "GTG" "H" "GTT" "Q" "GTC" "Q"
-                     "GCA" "R" "GCG" "R" "GCT" "R" "GCC" "R"
-                     "TAA" "I" "TAG" "I" "TAT" "I" "TAC" "M"
-                     "TGA" "T" "TGG" "T" "TGT" "T" "TGC" "T"
-                     "TTA" "N" "TTG" "N" "TTT" "K" "TTC" "K"
-                     "TCA" "S" "TCG" "S" "TCT" "R" "TCC" "R"
-                     "CAA" "V" "CAG" "V" "CAT" "V" "CAC" "V"
-                     "CGA" "A" "CGG" "A" "CGT" "A" "CGC" "A"
-                     "CTA" "D" "CTG" "D" "CTT" "E" "CTC" "E"
-                     "CCA" "G" "CCG" "G" "CCT" "G" "CCC" "G"}]
+(defn nuc>aa [scanned_fwd scanned_rev file]
+  (let [DNA>protein  {"TTT" "F" "TTC" "F" "TTA" "L" "TTG" "L"
+                      "TCT" "S" "TCC" "S" "TCA" "S" "TCG" "S"
+                      "TAT" "Y" "TAC" "Y" "TAA" "$" "TAG" "$"
+                      "TGT" "C" "TGC" "C" "TGA" "$" "TGG" "W" 
+                      "CTT" "L" "CTC" "L" "CTA" "L" "CTG" "L"
+                      "CCT" "P" "CCC" "P" "CCA" "P" "CCG" "P"
+                      "CAT" "H" "CAC" "H" "CAA" "Q" "CAG" "Q"
+                      "CGT" "R" "CGC" "R" "CGA" "R" "CGG" "R"
+                      "ATT" "I" "ATC" "I" "ATA" "I" "ATG" "M"
+                      "ACT" "T" "ACC" "T" "ACA" "T" "ACG" "T"
+                      "AAT" "N" "AAC" "N" "AAA" "K" "AAG" "K"
+                      "AGT" "S" "AGC" "S" "AGA" "R" "AGG" "R"
+                      "GTT" "V" "GTC" "V" "GTA" "V" "GTG" "V"
+                      "GCT" "A" "GCC" "A" "GCA" "A" "GCG" "A"
+                      "GAT" "D" "GAC" "D" "GAA" "E" "GAG" "E"
+                      "GGT" "G" "GGC" "G" "GGA" "G" "GGG" "G"}
+        allele       {:maj_p+   :maj_aa+  :maj_p-   :maj_aa-
+                      :min_p+   :min_aa+  :min_p-   :min_aa-}]
     (->>(i/add-column
-         :aa_fwd
+         (allele scanned_fwd)
          (->> (i/$ scanned_fwd file)
               (partition 3 1)
               (map #(apply str %))
@@ -57,7 +59,7 @@
          file)
         
         (i/add-column
-         :aa_rev
+         (allele scanned_rev)
          (->> (i/$ scanned_rev file)
               (partition 3 1)
               (map #(apply str %))

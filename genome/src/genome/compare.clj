@@ -17,20 +17,12 @@
 ;TESTING SNP TREND
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn calc-coved [file]
-  "Calculation corrected coverage"
-  (->> file
-       (i/add-derived-column
-        :p_cov
-        [:Tpois :Apois :Gpois :Cpois]
-        #(double (+ %1 %2 %3 %4)))))
-
 (defn snp-precent [snp file]
   "snp sould be the string of the keyword"
   (->> file
        (i/add-derived-column
         (keyword (str snp "-fq"))
-        [(keyword snp) :p_cov]
+        [(keyword snp) :c_cov]
         #(if (= %2 0.0)
            0.0
            (double (/ %1 %2))))))
@@ -51,7 +43,7 @@
               :Cpois :C1 :Cpois-fq :Cfq1
               :Apois :A1 :Apois-fq :Afq1
               :Gpois :G1 :Gpois-fq :Gfq1
-              :p_cov :cov1 :pi_pois :pi1
+              :c_cov :cov1 :pi_pois :pi1
               :consus_un :p-sus1
               :negsus_un :n-sus1
               :aa_fwd :aa_fwd1 :aa_rev :aa_rev1})
@@ -60,7 +52,7 @@
               :Cpois :C2 :Cpois-fq :Cfq2
               :Apois :A2 :Apois-fq :Afq2
               :Gpois :G2 :Gpois-fq :Gfq2
-              :p_cov :cov2 :pi_pois :pi2
+              :c_cov :cov2 :pi_pois :pi2
               :consus_un :p-sus2
               :negsus_un :n-sus2
               :aa_fwd :aa_fwd2 :aa_rev :aa_rev2})
@@ -79,10 +71,8 @@
 
 (defn create-dataset [file1 file2]
   "creates a dataset which contains all sites with allele frequency"
-  (let [p_covd1 (calc-coved file1)
-        p_covd2 (calc-coved file2)
-        snp1   (add-snp-precent p_covd1)
-        snp2   (add-snp-precent p_covd2)]
+  (let [snp1   (add-snp-precent file1)
+        snp2   (add-snp-precent file2)]
     (->>(unite snp1 snp2)
         (i/$ [:loc    :cov1   :pi1
               :p-sus1 :n-sus1 :aa_fwd1 :aa_rev1

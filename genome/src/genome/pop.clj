@@ -24,10 +24,10 @@
                  2)))
     0.0))
 
-(def pi_un [:pi_un [:c_cov :Tun :Aun :Cun :Gun]]);for variants calling
-(def pi_pois [:pi_pois [:c_cov :Tpois :Apois :Cpois :Gpois]]);after variants
+(def pi_un   [:pi_un   [:cov_un :Tun   :Aun   :Cun   :Gun  ]]);for variants calling
+(def pi_pois [:pi_pois [:cov_p  :Tpois :Apois :Cpois :Gpois]]);after variants
 
-(defn pise [file pi_type]
+(defn pise [pi_type file]
   (->> file
        (i/add-derived-column
          (first pi_type)
@@ -77,23 +77,25 @@
       (i/sum (filter #(not= (f ref) %) [ T A C G])))
     "-"))
 
-(defn folded-SFS [mean_cov ref c_cov T A C G] 
-  (if (= 0 c_cov)
+(defn folded-SFS [mean_cov ref cov_p T A C G] 
+  (if (= 0 cov_p)
     0.0
     (->> [T A C G]
          sort
          reverse
          second
-         (* (/ mean_cov c_cov))
+         (* (/ mean_cov cov_p))
          double)))
 
-(defn SFS [file SFS-type]
-  (let [mean_cov (st/mean (i/$ :c_cov file))]
+(defn SFS [SFS-type file]
+  (let [mean_cov (st/mean (i/$ :cov_p file))]
     (->> file
          (i/add-derived-column
           :sfs
-          [:ref :c_cov :Tpois :Apois :Cpois :Gpois]
+          [:ref :cov_p :Tpois :Apois :Cpois :Gpois]
           #(SFS-type mean_cov %1 %2 %3 %4 %5 %6)))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;BINNING

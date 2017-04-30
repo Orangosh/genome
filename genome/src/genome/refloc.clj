@@ -1,4 +1,4 @@
-(ns genome.conloc
+(ns genome.refloc
   (require [clojure.java.io   :as io ]
            [incanter.core     :as i  ]
            [incanter.datasets :as id ]
@@ -45,13 +45,19 @@
         ref_loc (get-loc-vec ref [] 1)]
     (->> (i/add-column :ref-loc ref_loc file)
          (i/add-column :loc (range (i/nrow file))))))
+    (def m-add-count-cols (memoize add-count-cols))
 
-(def m-add-count-cols (memoize add-count-cols))
+(defn refer-ann [refset file]
+  (let [ann_ref (->> (ii/read-dataset refset :header true)
+                     (i/$ [:merlin :loc :ref-loc]))]
+    (i/$join [:loc :loc] ann_ref file))) ;; add conloc
 
-(def refset (m-add-count-cols "/home/yosh/datafiles/Consensus/CMVconsensus/exphcmv.fasta"))
+(defn make-refile [fasta_file file_out]
+  "/home/yosh/datafiles/Consensus/CMVconsensus/exphcmv.fasta &
+   /home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
+  (let [refile    (m-add-count-cols fasta_file)
+        refinc    file_out]
+    (with-open [f-out (io/writer refinc)]
+      (csv/write-csv f-out [(map name (i/col-names refile))])
+      (csv/write-csv f-out (i/to-list refile)))))
 
-(def refset.inc "/home/yosh/datafiles/Consensus/CMVconsensus/refset.inc")
-
-(with-open [f-out (io/writer refset.inc)]
-    (csv/write-csv f-out [(map name (i/col-names refset))])
-    (csv/write-csv f-out (i/to-list refset)))

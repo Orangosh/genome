@@ -186,6 +186,22 @@
                     "GAT" "D" "GAC" "D" "GAA" "E" "GAG" "E"
                     "GGT" "G" "GGC" "G" "GGA" "G" "GGG" "G"}
 
+[DNA>protein {"AAA" "F" "AAG" "F" "AAT" "L" "AAC" "L"
+              "AGA" "S" "AGG" "S" "AGT" "S" "AGC" "S"
+              "ATA" "Y" "ATG" "Y" "ATT" "$" "ATC" "$"
+              "ACA" "C" "ACG" "C" "ACT" "$" "ACC" "W" 
+              "GAA" "L" "GAG" "L" "GAT" "L" "GAC" "L"
+              "GGA" "P" "GGG" "P" "GGT" "P" "GGC" "P"
+              "GTA" "H" "GTG" "H" "GTT" "Q" "GTC" "Q"
+              "GCA" "R" "GCG" "R" "GCT" "R" "GCC" "R"
+              "TAA" "I" "TAG" "I" "TAT" "I" "TAC" "M"
+              "TGA" "T" "TGG" "T" "TGT" "T" "TGC" "T"
+              "TTA" "N" "TTG" "N" "TTT" "K" "TTC" "K"
+              "TCA" "S" "TCG" "S" "TCT" "R" "TCC" "R"
+              "CAA" "V" "CAG" "V" "CAT" "V" "CAC" "V"
+              "CGA" "A" "CGG" "A" "CGT" "A" "CGC" "A"
+              "CTA" "D" "CTG" "D" "CTT" "E" "CTC" "E"
+              "CCA" "G" "CCG" "G" "CCT" "G" "CCC" "G"}]
 
 (ns genome.annotate
   (require [clojure.java.io :as io]

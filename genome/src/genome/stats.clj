@@ -13,9 +13,6 @@
 
 
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CLEAN ROWS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -30,7 +27,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn stat-report [file]
-  (def mean_cov (st/mean (i/$ :c_cov file)))
+  (def mean_cov (st/mean (i/$ :cov_p file)))
   (def nucleotide_diversity (/  (i/sum (i/$ :pi_pois file)) (i/nrow file)))
   (def segregating_sites (count (filter #(< 0 %) (i/$ :pi_pois file))))
   (def binned (p/bin 10 file))

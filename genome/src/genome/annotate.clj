@@ -1,8 +1,10 @@
 (ns genome.annotate
-  (require [clojure.java.io  :as io]
-           [clojure.string   :as s ]
-           [incanter.core    :as i ]
-           [incanter.io      :as ii]))
+  (require [clojure.java.io   :as io ]
+           [clojure.string    :as s  ]
+           [clojure.data.csv  :as csv]
+           [incanter.core     :as i  ]
+           [genome.annotate   :as ga ]
+           [incanter.io       :as ii ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;ARRANGING A GFF3 FILE INTO A DATASET
@@ -145,11 +147,23 @@
          (creat-one-gene (get-list rescrubed+ :gene) :gene+)
          (creat-one-gene (get-list rescrubed- :gene) :gene-))))
 
+(defn gff3>csv [file_in file_out]
+  "save annotation as csv file"
+  (let [incfile (gff3>dataset file_in)]
+    (with-open [f-out (io/writer file_out)]
+      (csv/write-csv f-out [(map name (i/col-names incfile))])
+      (csv/write-csv f-out (i/to-list incfile)))))
 
-  
-;  (with-open [f-out (io/writer file_out)]
-;    (csv/write-csv f-out [(map name (i/col-names annotated))])
-;    (csv/write-csv f-out (i/to-list annotated))))
+;("/home/yosh/datafiles/genes/merlin.gff3" "/home/yosh/datafiles/genes/merlin.inc")
 
-;(gff3>dataset "/home/yosh/datafiles/genes/merlin.gff3"  "/home/yosh/datafiles/genes/merlin.inc")
+(defn get-annotation [input_file]
+  "creates an annotation"
+  (let [ann_cols (ga/gff3>dataset input_file)]
+    (->> (i/$ (vec (sort (distinct  (i/col-names ann_cols)))) ann_cols)
+         (i/$ [:loc :gene+ :gene- :CDS+ :CDS- :exon- :exon+]))))
+  (def m-get-annotation (memoize get-annotation))
 
+(defn annotate [gff3 incfile]
+  "incorporates annotation into the inc file"
+  (let [annotation (m-get-annotation gff3)]
+    (i/$join [:loc :ref-loc] annotation incfile)))
