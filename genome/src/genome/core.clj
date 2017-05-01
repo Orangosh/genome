@@ -77,8 +77,14 @@
   (println "Calculating folded allele frequency spectra")
   (def sfsd (p/SFS p/folded-SFS pied))
 
-  (println "removing INDELs")
-  (def row_cleaned (gs/row-clean sfsd :ref "-"))
+  (println "Adding orfs")
+  (def orfd (da/add-orf-aa sfsd))
+
+  (println "Getting synonymous")
+  (def synonymous (da/get-synonymous orfd))
+
+  (println "getting synonymous sfs")
+  (def syn-sfs (p/bin 10 synonymous))
   
   (println "SUMMARY STATISTICS:")
   (gs/stat-report sfsd)
@@ -98,3 +104,4 @@
 (defn show[from length]
   (def incanted (ii/read-dataset "/home/yosh/datafiles/incanter" :header true))
   (i/$ (range from (+ from length)) :all incanted))
+

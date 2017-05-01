@@ -84,7 +84,8 @@
   "Adds the ORF seq to the inc file"
   (let [CDS+          (flatten (get-orf          (i/$ :CDS+ file))) 
         CDS- (reverse (flatten (get-orf (reverse (i/$ :CDS- file)))))]
-    (->> (i/add-column :orf+ CDS+ file)
+    (->> file
+         (i/add-column :orf+ CDS+)
          (i/add-column :orf- CDS-))))
 
 (defn aa-orf [orf amino-seq]
@@ -115,11 +116,28 @@
                      (i/$where { :orf- {:$eq 1}})
                      (i/$ :min_aa-)
                      reverse)]
-    (->> (i/add-column :majorf+
-                       (flatten (aa-orf orf+ majorf+)) file)
+    (->> file
+         (i/add-column :majorf+
+                       (flatten (aa-orf orf+ majorf+)))
          (i/add-column :minorf+
                        (flatten (aa-orf orf+ minorf+)))
          (i/add-column :majorf-
                        (flatten (reverse (aa-orf orf- majorf-))))
          (i/add-column :minorf-
                        (flatten (reverse (aa-orf orf- minorf-)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;GET SYNONYMOUS MUTATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-synonymous [file]
+  (i/$order
+   [:ref-loc]
+   :asc
+   (i/conj-rows
+    (->> file
+         (i/$where {:CDS+ {:$ne "-" }})
+         (i/$where (i/$fn [majorf+ minorf+] (= majorf+ minorf+))))
+    (->> file
+         (i/$where {:CDS- {:$ne "-" }})
+         (i/$where (i/$fn [majorf- minorf-] (= majorf- minorf-)))))))
