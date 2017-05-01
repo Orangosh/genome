@@ -89,6 +89,10 @@
   (println "SUMMARY STATISTICS:")
   (gs/stat-report sfsd)
 
+  (println "Synonymous site frequency spectra")
+  (println (map first  syn-sfs))
+  (println (map second syn-sfs))
+
   (with-open [f-out (io/writer file_out)]
     (csv/write-csv f-out [(map name (i/col-names sfsd))])
     (csv/write-csv f-out (i/to-list sfsd))))
