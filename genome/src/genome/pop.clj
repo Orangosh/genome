@@ -101,17 +101,21 @@
 ;BINNING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
 (defn bin [n-bins file] ;bin range 0-14 into 5 bins (bin 5 (range 15))
-  (let [bin-array (i/$ :sfs file)
-        min-freq (apply min bin-array)
-        max-freq (apply max bin-array)
+  (let [sfs_0      (i/nrow   (i/$where (i/$fn [sfs] (= 0.0 sfs)) file))
+        bin-array  (i/$ :sfs (i/$where (i/$fn [sfs] (< 0.0 sfs)) file))
+        min-freq   (apply min bin-array)
+        max-freq   (apply max bin-array)
         range-freq (- max-freq min-freq)
-        bin-fn (fn [freq](-> freq
-                          (- min-freq)
-                          (/ range-freq)
-                          (* n-bins)
-                          (int)
-                          (min (dec n-bins))))]
-    (->> (map bin-fn bin-array)
-         frequencies
-         sort)))
+        bin-fn     (fn [freq](-> freq
+                                 (- min-freq)
+                                 (/ range-freq)
+                                 (* n-bins)
+                                 (int)
+                                 (inc)
+                                 (min n-bins)))]
+    (conj (->> (map bin-fn bin-array)
+               frequencies
+               sort)
+          [0 sfs_0])))
