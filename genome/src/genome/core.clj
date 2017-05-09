@@ -36,7 +36,7 @@
   (def un_coved    (cv/calc-coved cv/cov_un annotated))
 
   (println "Creating first consensus sequence")
-  (def fstsus    (cv/major-allele cv/maj_un un_coved))
+  (def fstsus      (cv/major-allele cv/maj_un un_coved))
   
   (println "Correcting read errors")
   (def poised      (cv/poissonize 0.05 fstsus))
@@ -57,7 +57,7 @@
   (def neg_minored (da/pos>neg :min_p+ :min_p- minored))
   
   (println "adding consensus amino acids")
-  (def maj_aa      (da/nuc>aa :maj_p+ :maj_p- neg_minored))
+  (def maj_aa      (da/nuc>aa  :maj_p+ :maj_p- neg_minored))
 
   (println "adding consensus amino acids")
   (def min_aa      (da/nuc>aa :min_p+ :min_p- maj_aa))  
@@ -84,7 +84,7 @@
   (def synonymous (da/get-synonymous orfd))
 
   (println "getting synonymous sfs")
-  (def syn-sfs (p/bin 10 synonymous))
+  (def syn-sfs (p/bin-sfs 10 synonymous))
   
   (println "SUMMARY STATISTICS:")
   (gs/stat-report sfsd)
@@ -94,12 +94,12 @@
   (println (map second syn-sfs))
 
   (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names sfsd))])
-    (csv/write-csv f-out (i/to-list sfsd))))
+    (csv/write-csv f-out [(map name (i/col-names orfdd))])
+    (csv/write-csv f-out (i/to-list orfd))))
 
 
 (defn ready []
-  (-main "/home/yosh/datafiles/experiment/mpileup"
+  (-main "/home/yosh/datafiles/experiment/mpileup" 
          "/home/yosh/datafiles/experiment/incanter"
          "/home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
          "/home/yosh/datafiles/genes/merlin.gff3"))

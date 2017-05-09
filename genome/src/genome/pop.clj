@@ -14,8 +14,8 @@
 ;DIVERSITY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Calculats pi for each row
 (defn pi [cov T A C G] 
+"Calculates pi for each row"
   (if (>=  cov 2) 
     (double (/(+ (* T A) (* T C)
                  (* T G) (* A C) 
@@ -39,8 +39,9 @@
 ;SLIDING WINDOW
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;Creates a sliding window from a column :pi in file and adds a new col :pislide 
+
 (defn slide-mean [file scanned_column new_column win_size]
+"Creates a sliding window from a column :pi in file and adds a new col :pislide"
   (i/add-column
    new_column
    (->> (i/$ scanned_column file)
@@ -49,9 +50,9 @@
         (concat (take (dec win_size) (repeat 0))))
    file))
 
-;Very similar with a built in function
 
 (defn glide-mean [file scanned_column new_column win_size]
+"Very similar to 'slide-mean' with a built in function"
   (i/add-column
    new_column
    (->> (i/$ scanned_column file)
@@ -65,20 +66,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn unfolded-SFS [ref T A C G] 
+"Calculates unfolded site allele frequency for prevalent minor alleles"
   (if-not (= ref "-")
     (let [f { "T" T "A" A "C" C "G" G}] 
       (apply max (filter #(not= (f ref) %) [ T A C G])))
     "-")) 
 
-;Calculates unfolded site allele frequency for all minor alleles
+
 (defn multi-SFS [ref T A C G] 
+"Calculates unfolded site allele frequency for all minor alleles"
   (if-not (= ref "-")
     (let [f { "T" T "A" A "C" C "G" G}] 
       (i/sum (filter #(not= (f ref) %) [ T A C G])))
     "-"))
 
 (defn folded-SFS [mean_cov ref cov_p T A C G] 
-  (if (= 0 cov_p)
+"Calculates folded site allele frequency"
+  (if (= 0.0 cov_p)
     0.0
     (->> [T A C G]
          sort
@@ -92,7 +96,7 @@
     (->> file
          (i/add-derived-column
           :sfs
-          [:ref :cov_p :Tpois :Apois :Cpois :Gpois]
+          [:maj_un+ :cov_p :Tpois :Apois :Cpois :Gpois]
           #(SFS-type mean_cov %1 %2 %3 %4 %5 %6)))))
 
 
@@ -101,8 +105,7 @@
 ;BINNING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
-(defn bin [n-bins file] ;bin range 0-14 into 5 bins (bin 5 (range 15))
+(defn bin-sfs [n-bins file] ;bin range 0-14 into 5 bins (bin 5 (range 15))
   (let [sfs_0      (i/nrow   (i/$where (i/$fn [sfs] (= 0.0 sfs)) file))
         bin-array  (i/$ :sfs (i/$where (i/$fn [sfs] (< 0.0 sfs)) file))
         min-freq   (apply min bin-array)
@@ -119,3 +122,4 @@
                frequencies
                sort)
           [0 sfs_0])))
+

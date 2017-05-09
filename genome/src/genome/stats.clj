@@ -30,7 +30,7 @@
   (def mean_cov (st/mean (i/$ :cov_p file)))
   (def nucleotide_diversity (/  (i/sum (i/$ :pi_pois file)) (i/nrow file)))
   (def segregating_sites (count (filter #(< 0 %) (i/$ :pi_pois file))))
-  (def binned (p/bin 10 file))
+  (def binned (p/bin-sfs 10 file))
   (println "mean coverage " mean_cov)
   (println "Nucleotide diversity: " nucleotide_diversity)
   (println "Segregating Sites: " segregating_sites)
