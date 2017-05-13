@@ -49,6 +49,7 @@
         (map #(/ (apply + %) win_size))
         (concat (take (dec win_size) (repeat 0))))
    file))
+(def m-slide-mean (memoize slide-mean))
 
 
 (defn glide-mean [file scanned_column new_column win_size]

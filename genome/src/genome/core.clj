@@ -15,7 +15,8 @@
            [genome.consvar    :as cv ]
            [genome.refloc     :as rl ]
            [genome.dna2aa     :as da ]
-           [genome.annotate   :as ga]))
+           [genome.annotate   :as ga ]
+           [genome.view       :as v  ]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -70,7 +71,7 @@
                       :maj_p+ :min_p+ :maj_aa+ :min_aa+
                       :maj_p- :min_p- :maj_aa- :min_aa-
                       :Tpois :Apois :Cpois :Gpois] min_aa))
-
+  
   (println "Calculating nucleotide diversity")
   (def pied (p/pise p/pi_pois scrubed2))
 
@@ -80,23 +81,9 @@
   (println "Adding orfs")
   (def orfd (da/add-orf-aa sfsd))
 
-  (println "Getting synonymous")
-  (def synonymous (da/get-synonymous orfd))
-
-  (println "getting synonymous sfs")
-  (def syn-sfs (p/bin-sfs 10 synonymous))
-  
-  (println "SUMMARY STATISTICS:")
-  (gs/stat-report sfsd)
-
-  (println "Synonymous site frequency spectra")
-  (println (map first  syn-sfs))
-  (println (map second syn-sfs))
-
   (with-open [f-out (io/writer file_out)]
-    (csv/write-csv f-out [(map name (i/col-names orfdd))])
+    (csv/write-csv f-out [(map name (i/col-names orfd))])
     (csv/write-csv f-out (i/to-list orfd))))
-
 
 (defn ready []
   (-main "/home/yosh/datafiles/experiment/mpileup" 
