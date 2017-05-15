@@ -1,12 +1,12 @@
 (ns genome.view 
-  (require [clojure.java.io :as io]
-           [incanter.core :as i]
-           [incanter.datasets :as id]
-           [incanter.io :as ii ]
-           [incanter.charts :as c]
-           [incanter.stats :as st]
-           [clojure.string :as s]
-           [clojure.data.csv :as csv]))
+  (require [clojure.java.io   :as io ]
+           [incanter.core     :as i  ]
+           [incanter.datasets :as id ]
+           [incanter.io       :as ii ]
+           [incanter.charts   :as c  ]
+           [incanter.stats    :as st ]
+           [clojure.string    :as s  ]
+           [clojure.data.csv  :as csv]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;VIEW ONE FILE PROPERTIES
@@ -114,3 +114,45 @@
          column
          :data file6)    
         (i/view))))
+
+(defn view-gene [file col]
+  (i/with-data (->> file
+                    (i/$ col)
+                    frequencies
+                    (map vec)
+                    vec
+                    (i/dataset[col :sum]))
+    (i/view (c/bar-chart col :sum))))
+
+(defn view-gene [file col]
+  (-> (c/bar-chart
+       col
+       :sum
+       :data (->> file
+                  (i/$ col)
+                  frequencies
+                  (map vec)
+                  vec
+                  (i/dataset[col :sum])))
+      i/view))
+
+(defn view-gene [file col file2 col2]
+  (-> (c/bar-chart
+       col
+       :sum
+       :data (->> file
+                  (i/$ col)
+                  frequencies
+                  (map vec)
+                  vec
+                  (i/dataset[col :sum])))
+      (c/add-lines
+       col2
+       :sum
+       :data (->> file2
+                  (i/$ col)
+                  frequencies
+                  (map vec)
+                  vec
+                  (i/dataset[col :sum])))
+      i/view))

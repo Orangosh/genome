@@ -36,9 +36,11 @@
 
 (defn get-major [T A C G] 
   (let [get_map {"T" T "A" A "C" C "G" G}] 
-    (->> get_map 
-         (keep #(when (= (val %) (apply max (vals get_map))) (key %))) 
-         rand-nth))) ;rand-nth will choose equally apearing nucleotide at a site
+    (if (= 0.0 (double (+ T A C G)))
+      "-"
+      (->> get_map 
+           (keep #(when (= (val %) (apply max (vals get_map))) (key %)))
+           rand-nth)))) ;rand-nth will choose equally apearing nucleotide at a site
 
 (defn major-allele [con_type file]
   (->> file
@@ -56,21 +58,21 @@
 (def min_un [:min_un+ [:Tun   :Aun   :Cun   :Gun  ]]) ;for variants calling
 (def min_p  [:min_p+  [:Tpois :Apois :Cpois :Gpois]]);after variants
 
-
-
 (defn get-minor [T A C G] 
   "Gets minor allels rand-nth- chooses equally apearing nucleotide at a site"
-  (let [get_map      {"T" T "A" A "C" C "G" G}
+  (let [get_map   {"T" T "A" A "C" C "G" G}
         minor_allele (second (reverse (sort (vals get_map))))]
-    (cond
-      (= minor_allele 0)
-      (->> get_map 
-           (keep #(when (= (val %) (apply max (vals get_map))) (key %))) 
-           rand-nth)
-      :else
-      (->> get_map 
-           (keep #(when (= (val %) minor_allele) (key %)))
-           rand-nth))))                
+    (if (= 0.0 (double (+ T A C G)))
+      "-"
+      (cond
+        (= minor_allele 0)
+        (->> get_map 
+             (keep #(when (= (val %) (apply max (vals get_map))) (key %))) 
+             rand-nth)
+        :else
+        (->> get_map 
+             (keep #(when (= (val %) minor_allele) (key %)))
+             rand-nth)))))           
 
 (defn minor-allele [con_type file]
   (->> file
@@ -96,13 +98,15 @@
 
 (defn poisson [col_var col_val maj_un cov_un p]
   "Take a site read base and calculat P asuming Poisson distribution"
-  (let [lambda (->> T_matrix
-                    (i/$where {:major {:$eq maj_un}})
-                    (i/$ col_var)
-                    (* (/ cov_un 1000)))]
-    (if (< p (st/cdf-poisson col_val :lambda lambda))
-      col_val
-      0)))
+ (if (= "-"  col_val)
+   0
+   (let [lambda (->> T_matrix
+                     (i/$where {:major {:$eq maj_un}})
+                     (i/$ col_var)
+                     (* (/ cov_un 1000)))]
+     (if (< p (st/cdf-poisson col_val :lambda lambda))
+       col_val
+       0))))
   
 ;adds new base var column after iteration over one base column
 (defn pois-correct [col_var col_name p file]

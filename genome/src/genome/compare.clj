@@ -70,18 +70,32 @@
 ;UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(defn add-row [file]
+  (let [ it_be (i/col-names file)]
+    (i/conj-rows
+     (i/dataset
+      it_be
+      [(vec (take (count it_be) (repeat nil)))])
+     file)))
+
+
 (defn unite [file1 file2]
   "Adds only file2 rows that have a common :loc value with file1"
-  (let [coled1 (i/rename-cols sample1 file1)
-        coled2 (i/rename-cols sample2 file2)]
+  (let [set1   (add-row file1)
+        set2   (add-row file2)
+        coled1 (i/rename-cols sample1 set1)
+        coled2 (i/rename-cols sample2 set2)]
     (i/$where {:A2 {:$ne nil}}
               (i/$join [:loc :loc] coled2 coled1))))
+(def p-unite (memoize unite))
+
 
 (defn create-dataset [file1 file2]
   "creates a dataset which contains all sites with allele frequency"
   (let [snp1   (add-snp-precent file1)
         snp2   (add-snp-precent file2)]
-    (->>(unite snp1 snp2)
+    (->>(p-unite snp1 snp2)
         (i/$ [:merlin   :loc      :gene+    :gene-
               :CDS+     :CDS-     :exon+    :exon-
               :ref-loc1 :cov1     :pi1      :maj_un+1        
@@ -97,8 +111,6 @@
               :maj_p-2  :min_p-2  :maj_aa-2 :min_aa-2
               :majorf+2 :minorf+2 :majorf-2 :minorf-2]))))
 
-(def p-create-dataset (memoize create-dataset))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;FINAL FUNCTIONS FOR VSRIANTS ALLELE CHANGE AND DIV CHANGE
@@ -106,7 +118,7 @@
 
 (defn nuc-variants [file1 file2]
   "Shows alleles from two samples at same site"
-  (->>(p-create-dataset file1 file2)
+  (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc  :gene+ :gene-
             :CDS+     :CDS- :exon+ :exon-
             :ref-loc1 :cov1 :pi1  
@@ -117,7 +129,7 @@
 
 (defn aa-variants [file1 file2]
   "Shows alleles from two samples at same site"
-  (->>(p-create-dataset file1 file2)
+  (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc      :gene+    :gene-
             :CDS+     :CDS-     :exon+    :exon-
             :ref-loc1 :cov1

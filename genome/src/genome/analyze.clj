@@ -3,6 +3,9 @@
            [incanter.core     :as i  ]
            [incanter.io       :as ii ]
            [incanter.stats    :as st ]
+           [incanter.charts   :as c  ]
+           [genome.dna2aa     :as da ]
+           [genome.stats      :as gs ]           
            [genome.consvar    :as cv ]
            [genome.pop        :as p  ]
            [genome.compare    :as gc ]
@@ -108,19 +111,19 @@
   (gs/stat-report file)
   (println "Synonymous site frequency spectra")
   (println (map first  syn-sfs))
-  (println (map second syn-sfs))
+  (println (map second syn-sfs))))
 
   
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;COMPARISON ANALYSES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn seq-compare [file1 file2 comp_type]
+(defn seq-compare [comp_type file1 file2 ]
   (case comp_type
-    "n-var" (gc/nuc-variants   file1 file2)
-    "a-var" (gc/aa-variants    file1 file2)
-    "all" (gc/allele-change    file1 file2)
-    "div" (gc/diversity-change file1 file2)))
+    "n-var" (gc/nuc-variants     file1 file2)
+    "a-var" (gc/aa-variants      file1 file2)
+    "all"   (gc/allele-change    file1 file2)
+    "div"   (gc/diversity-change file1 file2)))
 (def m-compare (memoize seq-compare))
 
 (defn clean-compare [file1 file2 comp_type]
@@ -130,3 +133,67 @@
               :cov1 :cov2  :p-sus1 :p-sus2 :n-sus1 :n-sus2])
         (i/$where (i/$fn [p-sus1 p-sus2] (not= p-sus1 p-sus2)))
         (i/$where (i/$fn [cov1 cov2] (and (< 20 cov1) (< 20 cov2))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;COMPARISON ANALYSES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn pi-chart [file]
+  (->> file
+       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
+       (i/$ [:ref-loc :gene+ :CDS+ :loc :pi_pois
+             :cov_p :maj_p+ :min_p+ :maj_aa+ :min_aa+ 
+             :Tpois :Apois :Cpois :Gpois 
+             :orf+ :majorf+ :minorf+])
+       (i/$where (i/$fn [pi_pois] (= pi_pois 0.0)))))
+
+(defn nonsyn-chart [file]
+  (->> file
+       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
+       (i/$ [:ref-loc :gene+ :CDS+ :loc 
+             :cov_p :maj_p+ :min_p+ :maj_aa+ :min_aa+ 
+             :Tpois :Apois :Cpois :Gpois 
+             :orf+ :majorf+ :minorf+])
+       (i/$where (i/$fn [majorf+ minorf+] (not= majorf+ minorf+)))))
+
+
+(import '(org.jfree.chart StandardChartTheme)
+        '(org.jfree.chart.plot DefaultDrawingSupplier)
+        '(java.awt Color))
+
+(defn all-red-theme [colour]
+  (doto (StandardChartTheme/createJFreeTheme)
+    (.setDrawingSupplier
+     (proxy [DefaultDrawingSupplier] []
+       (getNextPaint [] Color/colour)))))
+
+(defn get-gene [file function col]
+  (let [newcol  (str col ref)
+        general (->> file
+                     (i/$ col)
+                     frequencies
+                     (map vec)
+                     vec
+                     (i/dataset [col :sum])
+                     (i/$order :sum :desc))
+        specific (->> (function file)
+                      (i/$ col)
+                      frequencies
+                      (map vec)
+                      vec
+                      (i/dataset [col :refsum])
+                      (i/$order :refsum :desc))
+        spec&gen (i/$join [col col] general specific)]
+    (->> spec&gen
+         (i/add-derived-column
+          :ratio
+          [:sum :refsum]
+          #(double (/ %1 %2))) (i/$ (range 0 20) :all ))))
+
+
+(defn view-gene [file function col colour]
+  (-> (c/bar-chart
+       col :sum
+       :legend true
+       :data (get-gene file function col))
+      (c/set-theme (all-red-theme colour)) i/view))

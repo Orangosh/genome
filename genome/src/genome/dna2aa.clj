@@ -44,7 +44,24 @@
                       "GTT" "V" "GTC" "V" "GTA" "V" "GTG" "V"
                       "GCT" "A" "GCC" "A" "GCA" "A" "GCG" "A"
                       "GAT" "D" "GAC" "D" "GAA" "E" "GAG" "E"
-                      "GGT" "G" "GGC" "G" "GGA" "G" "GGG" "G"}
+                      "GGT" "G" "GGC" "G" "GGA" "G" "GGG" "G"
+                      "TT-" "-" "TC-" "-" "TA-" "-" "TG-" "-" 
+                      "T-T" "-" "T-C" "-" "T-A" "-" "T-G" "-"
+                      "-TT" "-" "-TC" "-" "-TA" "-" "-TG" "-"
+                      "T--" "-" "-T-" "-" "--T" "-"
+                      "CT-" "-" "CC-" "-" "CA-" "-" "CG-" "-" 
+                      "C-T" "-" "C-C" "-" "C-A" "-" "C-G" "-"
+                      "-CT" "-" "-CC" "-" "-CA" "-" "-CG" "-"
+                      "C--" "-" "-C-" "-" "--C" "-"
+                      "AT-" "-" "AC-" "-" "AA-" "-" "AG-" "-" 
+                      "A-T" "-" "A-C" "-" "A-A" "-" "A-G" "-"
+                      "-AT" "-" "-AC" "-" "-AA" "-" "-AG" "-"
+                      "A--" "-" "-A-" "-" "--A" "-"
+                      "GT-" "-" "GC-" "-" "GA-" "-" "GG-" "-" 
+                      "G-T" "-" "G-C" "-" "G-A" "-" "G-G" "-"
+                      "-GT" "-" "-GC" "-" "-GA" "-" "-GG" "-"
+                      "G--" "-" "-G-" "-" "--G" "-"
+                      "---" "-"}
         allele       {:maj_p+   :maj_aa+  :maj_p-   :maj_aa-
                       :min_p+   :min_aa+  :min_p-   :min_aa-}]
     (->>(i/add-column
