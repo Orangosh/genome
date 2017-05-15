@@ -98,7 +98,7 @@
 
 (defn poisson [col_var col_val maj_un cov_un p]
   "Take a site read base and calculat P asuming Poisson distribution"
- (if (= "-"  col_val)
+ (if (= "-"  maj_un)
    0
    (let [lambda (->> T_matrix
                      (i/$where {:major {:$eq maj_un}})
