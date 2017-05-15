@@ -161,39 +161,40 @@
         '(org.jfree.chart.plot DefaultDrawingSupplier)
         '(java.awt Color))
 
-(defn all-red-theme [colour]
+(def all-red-theme 
   (doto (StandardChartTheme/createJFreeTheme)
     (.setDrawingSupplier
      (proxy [DefaultDrawingSupplier] []
-       (getNextPaint [] Color/colour)))))
+       (getNextPaint [] Color/blue)))))
 
-(defn get-gene [file function col]
+(defn get-gene [function col file]
   (let [newcol  (str col ref)
         general (->> file
                      (i/$ col)
                      frequencies
                      (map vec)
                      vec
-                     (i/dataset [col :sum])
-                     (i/$order :sum :desc))
+                     (i/dataset [col :refsum]))
         specific (->> (function file)
                       (i/$ col)
                       frequencies
                       (map vec)
                       vec
-                      (i/dataset [col :refsum])
-                      (i/$order :refsum :desc))
+                      (i/dataset [col :sum]))
         spec&gen (i/$join [col col] general specific)]
     (->> spec&gen
          (i/add-derived-column
           :ratio
           [:sum :refsum]
-          #(double (/ %1 %2))) (i/$ (range 0 20) :all ))))
+          #(double (/ %1 %2)))
+         (i/$order :ratio :desc))))
 
 
-(defn view-gene [file function col colour]
+(defn view-gene [file function col]
   (-> (c/bar-chart
-       col :sum
+       col :ratio
+       :title (name :file)
        :legend true
-       :data (get-gene file function col))
-      (c/set-theme (all-red-theme colour)) i/view))
+       :data (i/$ (range 0 10) :all (get-gene file function col)))
+      (c/set-theme all-red-theme) i/view))
+
