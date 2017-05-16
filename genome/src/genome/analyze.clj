@@ -44,60 +44,60 @@
 ;GET SET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-set [file]
+(defn get-set [file cov]
   "open an csv.inc file"
-  (ii/read-dataset file :header true))
-(def m-get-set (memoize get-set))
+  (->> (ii/read-dataset file :header true)
+       (i/$where (i/$fn [cov_p] (< cov cov_p)))))
+  (def m-get-set (memoize get-set))
 
-(def S05-Pa  (m-get-set L05-Pa ))
-(def S05-M   (m-get-set L05-M  ))
+(def S05-Pa  (m-get-set L05-Pa  20))
+(def S05-M   (m-get-set L05-M   20))
 
-(def S19-Pb  (m-get-set L19-Pb ))
-(def S19-Pc  (m-get-set L19-Pc ))
-(def S19-Pd  (m-get-set L19-Pd ))
-(def S19-S1a (m-get-set L19-S1a))
+(def S19-Pb  (m-get-set L19-Pb  20))
+(def S19-Pc  (m-get-set L19-Pc  20))
+(def S19-Pd  (m-get-set L19-Pd  20))
+(def S19-S1a (m-get-set L19-S1a 20))
 
-(def S20-Pa  (m-get-set L20-Pa ))
-(def S20-Pb  (m-get-set L20-Pb ))
-(def S20-Pc  (m-get-set L20-Pc ))
-(def S20-S1  (m-get-set L20-S1 )) 
-(def S20-S1a (m-get-set L20-S1a))
+(def S20-Pa  (m-get-set L20-Pa  20))
+(def S20-Pb  (m-get-set L20-Pb  20))
+(def S20-Pc  (m-get-set L20-Pc  20))
+(def S20-S1  (m-get-set L20-S1  20)) 
+(def S20-S1a (m-get-set L20-S1a 20))
   
-(def S79-Pa  (m-get-set L79-Pa ))
-(def S79-Pb  (m-get-set L79-Pb ))
-(def S79-M   (m-get-set L79-M  ))
-(def S79-S1a (m-get-set L79-S1a))
-(def S79-S1b (m-get-set L79-S1b))
-
+(def S79-Pa  (m-get-set L79-Pa  20))
+(def S79-Pb  (m-get-set L79-Pb  20))
+(def S79-M   (m-get-set L79-M   20))
+(def S79-S1a (m-get-set L79-S1a 20))
+(def S79-S1b (m-get-set L79-S1b 20))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn win-1000 [file]
-  (p/m-slide-mean file :pi_pois :pi_slide 1000)) 
+(defn win-100 [file]
+  (p/m-slide-mean file :pi_pois :pi_slide 100)) 
 
-(def W05-Pa  (win-1000 (m-get-set L05-Pa )))
-(def W05-M   (win-1000 (m-get-set L05-M  )))
+(def W05-Pa  (win-100 (m-get-set L05-Pa )))
+(def W05-M   (win-100 (m-get-set L05-M  )))
 
-(def W19-Pb  (win-1000 (m-get-set L19-Pb )))
-(def W19-Pc  (win-1000 (m-get-set L19-Pc )))
-(def W19-Pd  (win-1000 (m-get-set L19-Pd )))
-(def W19-S1a (win-1000 (m-get-set L19-S1a)))
+(def W19-Pb  (win-100 (m-get-set L19-Pb )))
+(def W19-Pc  (win-100 (m-get-set L19-Pc )))
+(def W19-Pd  (win-100 (m-get-set L19-Pd )))
+(def W19-S1a (win-100 (m-get-set L19-S1a)))
 
-(def W20-Pa  (win-1000 (m-get-set L20-Pa )))
-(def W20-Pb  (win-1000 (m-get-set L20-Pb )))
-(def W20-Pc  (win-1000 (m-get-set L20-Pc )))
-(def W20-S1  (win-1000 (m-get-set L20-S1 )))
-(def W20-S1a (win-1000 (m-get-set L20-S1a)))
+(def W20-Pa  (win-100 (m-get-set L20-Pa )))
+(def W20-Pb  (win-100 (m-get-set L20-Pb )))
+(def W20-Pc  (win-100 (m-get-set L20-Pc )))
+(def W20-S1  (win-100 (m-get-set L20-S1 )))
+(def W20-S1a (win-100 (m-get-set L20-S1a)))
   
-(def W79-Pa  (win-1000 (m-get-set L79-Pa )))
-(def W79-Pb  (win-1000 (m-get-set L79-Pb )))
-(def W79-M   (win-1000 (m-get-set L79-M  )))
-(def W79-S1a (win-1000 (m-get-set L79-S1a)))
-(def W79-S1b (win-1000 (m-get-set L79-S1b)))
+(def W79-Pa  (win-100 (m-get-set L79-Pa )))
+(def W79-Pb  (win-100 (m-get-set L79-Pb )))
+(def W79-M   (win-100 (m-get-set L79-M  )))
+(def W79-S1a (win-100 (m-get-set L79-S1a)))
+(def W79-S1b (win-100 (m-get-set L79-S1b)))
 
-(v/look :pi_slide S79-Pb1000 S79-M1000 S79-S1a1000)
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -190,11 +190,13 @@
          (i/$order :ratio :desc))))
 
 
-(defn view-gene [file function col]
+(defn view-gene [function col filename file]
   (-> (c/bar-chart
-       col :ratio
-       :title (name :file)
+       col
+       :ratio
+       :title filename 
        :legend true
        :data (i/$ (range 0 10) :all (get-gene file function col)))
-      (c/set-theme all-red-theme) i/view))
+      (c/set-theme all-red-theme)
+      i/view))
 
