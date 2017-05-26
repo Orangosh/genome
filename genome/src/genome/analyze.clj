@@ -49,6 +49,12 @@
   "open an csv.inc file"
   (->> (ii/read-dataset file :header true)
        (i/$where (i/$fn [cov_p] (< cov cov_p)))))
+(def m-get-set (memoize get-set))
+
+(defn get-set [file cov]
+  "open an csv.inc file"
+  (->> (ii/read-dataset file :header true)
+       (i/$where (i/$fn [cov_p] (< cov cov_p)))))
   (def m-get-set (memoize get-set))
 
 (defn les-sets [])
@@ -80,25 +86,25 @@
   (p/m-slide-mean file :pi_pois :pi_slide 100)) 
 
 (defn les-win []
-  (def W05-Pa  (win-100 (m-get-set L05-Pa )))
-  (def W05-M   (win-100 (m-get-set L05-M  )))
+  (def W05-Pa  (win-100 (m-get-set L05-Pa  20)))
+  (def W05-M   (win-100 (m-get-set L05-M   20)))
 
-  (def W19-Pb  (win-100 (m-get-set L19-Pb )))
-  (def W19-Pc  (win-100 (m-get-set L19-Pc )))
-  (def W19-Pd  (win-100 (m-get-set L19-Pd )))
-  (def W19-S1a (win-100 (m-get-set L19-S1a)))
+  (def W19-Pb  (win-100 (m-get-set L19-Pb  20)))
+  (def W19-Pc  (win-100 (m-get-set L19-Pc  20)))
+  (def W19-Pd  (win-100 (m-get-set L19-Pd  20)))
+  (def W19-S1a (win-100 (m-get-set L19-S1a 20)))
 
-  (def W20-Pa  (win-100 (m-get-set L20-Pa )))
-  (def W20-Pb  (win-100 (m-get-set L20-Pb )))
-  (def W20-Pc  (win-100 (m-get-set L20-Pc )))
-  (def W20-S1  (win-100 (m-get-set L20-S1 )))
-  (def W20-S1a (win-100 (m-get-set L20-S1a)))
+  (def W20-Pa  (win-100 (m-get-set L20-Pa  20)))
+  (def W20-Pb  (win-100 (m-get-set L20-Pb  20)))
+  (def W20-Pc  (win-100 (m-get-set L20-Pc  20)))
+  (def W20-S1  (win-100 (m-get-set L20-S1  20)))
+  (def W20-S1a (win-100 (m-get-set L20-S1a 20)))
   
-  (def W79-Pa  (win-100 (m-get-set L79-Pa )))
-  (def W79-Pb  (win-100 (m-get-set L79-Pb )))
-  (def W79-M   (win-100 (m-get-set L79-M  )))
-  (def W79-S1a (win-100 (m-get-set L79-S1a)))
-  (def W79-S1b (win-100 (m-get-set L79-S1b))))
+  (def W79-Pa  (win-100 (m-get-set L79-Pa  20)))
+  (def W79-Pb  (win-100 (m-get-set L79-Pb  20)))
+  (def W79-M   (win-100 (m-get-set L79-M   20)))
+  (def W79-S1a (win-100 (m-get-set L79-S1a 20)))
+  (def W79-S1b (win-100 (m-get-set L79-S1b 20))))
 
 
 
@@ -265,26 +271,60 @@
          (i/add-column
           :end
           ncol)
-         (i/rename-cols {:loc :start})
-         (i/$ [:r_seq :start :end
-               :gene+ :gene- col]))))
+         (i/rename-cols {:loc :start
+                         :gene+ :genep
+                         :gene- :genen
+                         :CDS+  :CDSp
+                         :CDS-  :CDSn})
+         (i/$ [:r_seq  col   :start :end
+               :genep :genen :CDSp  :CDSn]))))
+(def m-get-range-set (memoize get-range-set))
+
 
 ;;;;;;;;;;;;;;;;;;
 ;;Diversity
 
 (defn circos-database [file]
   (->> file
-       (i/$ [:r_seq :loc :pi_pois])
        (i/rename-cols {:r_seq   :sample
                        :loc     :position1
-                       :pi_pois :value})
+                       :pi_slide :value})
        (i/add-derived-column
         :position2
         [:position1]
-        (+ % 1))))
+        #(+ % 1))
+       (i/$ [:sample :position1 :position2 :value])))
 
-(def circosing
-  [S19-Pb "/home/yosh/Software/git/circos/resources/public/data/S19-Pb.csv"])
+(defn circosing1 []
+  (let [ An19-Pb (m-get-set L19-Pb 0)] 
+    [[(m-get-range-set :gene+ true  An19-Pb)
+      "/home/yosh/Software/git/visual/circos/resources/public/data/genepos.csv"]
+     [(m-get-range-set :gene- false An19-Pb)
+      "/home/yosh/Software/git/visual/circos/resources/public/data/geneneg.csv"]
+     [(m-get-range-set :CDS+  true  An19-Pb)
+      "/home/yosh/Software/git/visual/circos/resources/public/data/CDSpos.csv"]
+     [(m-get-range-set :CDS-  false An19-Pb)
+      "/home/yosh/Software/git/visual/circos/resources/public/data/CDSneg.csv"]]))
+(defn circosing2 []     
+    [[W05-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W05-Pa.csv" ]
+     [W05-M   "/home/yosh/Software/git/visual/circos/resources/public/data/W05-M.csv"  ]
+
+     [W19-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pb.csv" ]     [W19-Pc  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pc.csv" ]
+     [W19-Pd  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pd.csv" ]
+     [W19-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W19-S1a.csv"]])
+(defn circosing3 []          
+     [[W20-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pa.csv" ]
+     [W20-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pb.csv" ]
+     [W20-Pc  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pc.csv" ]
+     [W20-S1  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1.csv" ]
+     [S19-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1a.csv"]
+
+     [W79-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pa.csv" ]
+     [W79-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pb.csv" ]
+     [W79-M   "/home/yosh/Software/git/visual/circos/resources/public/data/W79-M.csv"  ]
+     [W79-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1a.csv"]
+     [W79-S1b "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1b.csv"]     ])
+
 
 (defn circos [circosing]
   (let [[file_in file_out] circosing
@@ -293,3 +333,12 @@
       (csv/write-csv f-out [(map name (i/col-names file_inc))])
       (csv/write-csv f-out (i/to-list file_inc)))))
 
+(defn cir-ann [circosing]
+  (let [[file_in file_out] circosing]
+    (with-open [f-out (io/writer file_out)]
+      (csv/write-csv f-out [(map name (i/col-names file_in))])
+      (csv/write-csv f-out (i/to-list file_in)))))
+
+(defn map-circos-sets []
+  (map #(circos %) circosing))
+    
