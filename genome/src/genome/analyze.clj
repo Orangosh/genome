@@ -9,35 +9,36 @@
            [genome.consvar    :as cv ]
            [genome.pop        :as p  ]
            [genome.compare    :as gc ]
+           [clojure.data.csv  :as csv]
            [genome.view       :as v  ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE FILE LOCATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def home                    "/mnt/data/datafiles/")
-(def input_file  (str home "concensus/merlin.gff3"))
-(def output_file (str home "concensus/refset.inc" ))
+(def home                  "/home/yosh/datafiles/")
+(def input_file  (str home "genes/merlin.gff3"  ))
+(def output_file (str home "genes/merlin.inc"   ))
 
 
-(def L05-Pa  (str home"incanted_files/505-Pa.inc" ))
-(def L05-M   (str home"incanted_files/505-M.inc"  ))
+(def L05-Pa  (str home "incanted_files/505-Pa.inc" ))
+(def L05-M   (str home "incanted_files/505-M.inc"  ))
 
-(def L19-Pb  (str home "incanted_files/519-Pb.inc"))
-(def L19-Pc  (str home"incanted_files/519-Pc.inc" ))
-(def L19-Pd  (str home"incanted_files/519-Pd.inc" ))
-(def L19-S1a (str home"incanted_files/519-S1a.inc"))
+(def L19-Pb  (str home "incanted_files/519-Pb.inc" ))
+(def L19-Pc  (str home "incanted_files/519-Pc.inc" ))
+(def L19-Pd  (str home "incanted_files/519-Pd.inc" ))
+(def L19-S1a (str home "incanted_files/519-S1a.inc"))
 
-(def L20-Pa  (str home"incanted_files/520-Pa.inc" ))
-(def L20-Pb  (str home"incanted_files/520-Pb.inc" ))
-(def L20-Pc  (str home"incanted_files/520-Pc.inc" ))
-(def L20-S1  (str home"incanted_files/520-S1.inc" )) 
-(def L20-S1a (str home"incanted_files/520-S1a.inc"))
+(def L20-Pa  (str home "incanted_files/520-Pa.inc" ))
+(def L20-Pb  (str home "incanted_files/520-Pb.inc" ))
+(def L20-Pc  (str home "incanted_files/520-Pc.inc" ))
+(def L20-S1  (str home "incanted_files/520-S1.inc" )) 
+(def L20-S1a (str home "incanted_files/520-S1a.inc"))
   
-(def L79-Pa  (str home"incanted_files/579-Pa.inc" ))
-(def L79-Pb  (str home"incanted_files/579-Pb.inc" ))
-(def L79-M   (str home"incanted_files/579-M.inc"  ))
-(def L79-S1a (str home"incanted_files/579-S1a.inc"))
-(def L79-S1b (str home"incanted_files/579-S1b.inc"))
+(def L79-Pa  (str home "incanted_files/579-Pa.inc" ))
+(def L79-Pb  (str home "incanted_files/579-Pb.inc" ))
+(def L79-M   (str home "incanted_files/579-M.inc"  ))
+(def L79-S1a (str home "incanted_files/579-S1a.inc"))
+(def L79-S1b (str home "incanted_files/579-S1b.inc"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -50,26 +51,26 @@
        (i/$where (i/$fn [cov_p] (< cov cov_p)))))
   (def m-get-set (memoize get-set))
 
-(defn les-sets []
-  (def S05-Pa  (m-get-set L05-Pa  20))
-  (def S05-M   (m-get-set L05-M   20))
+(defn les-sets [])
+(def S05-Pa  (m-get-set L05-Pa  20))
+(def S05-M   (m-get-set L05-M   20))
 
-  (def S19-Pb  (m-get-set L19-Pb  20))
-  (def S19-Pc  (m-get-set L19-Pc  20))
-  (def S19-Pd  (m-get-set L19-Pd  20))
-  (def S19-S1a (m-get-set L19-S1a 20))
+(def S19-Pb  (m-get-set L19-Pb  20))
+(def S19-Pc  (m-get-set L19-Pc  20))
+(def S19-Pd  (m-get-set L19-Pd  20))
+(def S19-S1a (m-get-set L19-S1a 20))
 
-  (def S20-Pa  (m-get-set L20-Pa  20))
-  (def S20-Pb  (m-get-set L20-Pb  20))
-  (def S20-Pc  (m-get-set L20-Pc  20))
-  (def S20-S1  (m-get-set L20-S1  20)) 
-  (def S20-S1a (m-get-set L20-S1a 20))
+(def S20-Pa  (m-get-set L20-Pa  20))
+(def S20-Pb  (m-get-set L20-Pb  20))
+(def S20-Pc  (m-get-set L20-Pc  20))
+(def S20-S1  (m-get-set L20-S1  20)) 
+(def S20-S1a (m-get-set L20-S1a 20))
   
-  (def S79-Pa  (m-get-set L79-Pa  20))
-  (def S79-Pb  (m-get-set L79-Pb  20))
-  (def S79-M   (m-get-set L79-M   20))
-  (def S79-S1a (m-get-set L79-S1a 20))
-  (def S79-S1b (m-get-set L79-S1b 20)))
+(def S79-Pa  (m-get-set L79-Pa  20))
+(def S79-Pb  (m-get-set L79-Pb  20))
+(def S79-M   (m-get-set L79-M   20))
+(def S79-S1a (m-get-set L79-S1a 20))
+(def S79-S1b (m-get-set L79-S1b 20))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
@@ -217,3 +218,67 @@
               :cov1 :cov2  :p-sus1 :p-sus2 :n-sus1 :n-sus2])
         (i/$where (i/$fn [p-sus1 p-sus2] (not= p-sus1 p-sus2)))
         (i/$where (i/$fn [cov1 cov2] (and (< 20 cov1) (< 20 cov2))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PREPARING DATA FOR d3/CIRCOS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-locations [col postrand? begining? file]
+  "gets a set with all begining or end of a positive or netetive column"
+  (let [gene     (if postrand? :gene+ :gene-)
+        name-vec (->> file
+                      (i/$where {col {:$ne "-"}})
+                      (i/$ gene)
+                      distinct)]
+    (if begining?     
+      (map #(i/$ (range 0 1) :all
+                 (i/$where {col {:$ne "-"}}
+                           (i/$where {gene {:$eq %}} file)))
+           name-vec)
+      (map #(i/$ (range 0 1) :all
+                 (i/$order
+                  :loc :desc
+                  (i/$where {col {:$ne "-"}}
+                            (i/$where {gene {:$eq %}} file))))
+           name-vec))))
+
+(defn get-genes [col postrand? begining? file ]
+  (->>(get-locations col postrand? begining? file)
+      (apply i/conj-rows)))
+  (def m-get-genes (memoize get-genes))
+
+(defn get-range-set [col postrand? file]
+  (let [file+ (m-get-genes col postrand? true  file)
+        file- (m-get-genes col postrand? false file)
+        ncol (i/$ :loc file-)]
+    (->> file+
+         (i/add-column
+          :end
+          ncol)
+         (i/rename-cols {:loc :start})
+         (i/$ [:r_seq :start :end
+               :gene+ :gene- col]))))
+
+(defn circos-database [file]
+  (->> file
+       (i/$ [:r_seq :loc :pi_pois])
+       (i/rename-cols {:r_seq   :sample
+                       :loc     :position1
+                       :pi_pois :value})
+       (i/add-derived-column
+        :position2
+        [:position1]
+        (+ % 1))))
+
+(def circosing
+  [S19-Pb "/home/yosh/Software/git/circos/resources/public/data/S19-Pb.csv"])
+
+(defn circos [circosing]
+  (let [[file_in file_out] circosing
+        file_inc           (circos-database file_in)]
+    (with-open [f-out (io/writer file_out)]
+      (csv/write-csv f-out [(map name (i/col-names file_inc))])
+      (csv/write-csv f-out (i/to-list file_inc)))))
+
+
