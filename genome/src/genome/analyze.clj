@@ -117,6 +117,7 @@
   (println (map second syn-sfs))))
 
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;SINGLE SAMPLE ANALYSIS- GET COMMON FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -196,9 +197,6 @@
        :data file)
       (i/view)))   
 
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;COMPARISON ANALYSES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -211,18 +209,29 @@
     "div"   (gc/diversity-change file1 file2)))
 (def m-compare (memoize seq-compare))
 
-(defn clean-compare [file1 file2 comp_type]
+(defn clean-proc [comp_file]
   "Adds only annotation rows that have a common :loc value with seq_dataset"
-  (->> (m-compare file1 file2 comp_type)
-        (i/$ [:loc  :gene+ :gene-  :mRNA+  :mRNA-
-              :cov1 :cov2  :p-sus1 :p-sus2 :n-sus1 :n-sus2])
-        (i/$where (i/$fn [p-sus1 p-sus2] (not= p-sus1 p-sus2)))
-        (i/$where (i/$fn [cov1 cov2] (and (< 20 cov1) (< 20 cov2))))))
+  (->> comp_file
+       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
+       (i/$where (i/$fn [majorf+1 majorf+2 minorf+1 minorf+2]
+                        (and (not= majorf+2 minorf+2)
+                             (=    minorf+2 majorf+1)
+                             (not= majorf+1 "-")
+                             (not= majorf+2 "-")
+                             (not= minorf+1 "-")
+                             (not= minorf+2 "-"))))
+       (i/$ [:ref-loc1 :loc :gene+
+             :cov1 :A1 :T1 :G1 :C1
+             :cov2 :A2 :T2 :G2 :C2
+             :majorf+1 :majorf+2 :minorf+1 :minorf+2])))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PREPARING DATA FOR d3/CIRCOS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;
+;;Anotations
 
 (defn get-locations [col postrand? begining? file]
   "gets a set with all begining or end of a positive or netetive column"
@@ -260,6 +269,9 @@
          (i/$ [:r_seq :start :end
                :gene+ :gene- col]))))
 
+;;;;;;;;;;;;;;;;;;
+;;Diversity
+
 (defn circos-database [file]
   (->> file
        (i/$ [:r_seq :loc :pi_pois])
@@ -280,5 +292,4 @@
     (with-open [f-out (io/writer file_out)]
       (csv/write-csv f-out [(map name (i/col-names file_inc))])
       (csv/write-csv f-out (i/to-list file_inc)))))
-
 
