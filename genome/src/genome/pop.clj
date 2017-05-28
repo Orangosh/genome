@@ -14,7 +14,7 @@
 ;DIVERSITY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn pi [cov T A C G] 
+(defn get-pi [cov T A C G] 
 "Calculates pi for each row"
   (if (>=  cov 2) 
     (double (/(+ (* T A) (* T C)
@@ -24,15 +24,15 @@
                  2)))
     0.0))
 
-(def pi_un   [:pi_un   [:cov_un :Tun   :Aun   :Cun   :Gun  ]]);for variants calling
-(def pi_pois [:pi_pois [:cov_p  :Tpois :Apois :Cpois :Gpois]]);after variants
+(def pi_un [:pi_un [:cov_un :Tun :Aun :Cun :Gun]]);for variants calling
+(def pi    [:pi    [:depth  :T   :A   :C   :G  ]]);after variants
 
 (defn pise [pi_type file]
   (->> file
        (i/add-derived-column
          (first pi_type)
          (last pi_type) 
-         #(pi %1 %2 %3 %4 %5))))
+         #(get-pi %1 %2 %3 %4 %5))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,11 +93,11 @@
          double)))
 
 (defn SFS [SFS-type file]
-  (let [mean_cov (st/mean (i/$ :cov_p file))]
+  (let [mean_cov (st/mean (i/$ :depth file))]
     (->> file
          (i/add-derived-column
           :sfs
-          [:maj_un+ :cov_p :Tpois :Apois :Cpois :Gpois]
+          [:maj_un+ :depth :T :A :C :G]
           #(SFS-type mean_cov %1 %2 %3 %4 %5 %6)))))
 
 

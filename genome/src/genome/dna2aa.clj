@@ -62,8 +62,8 @@
                       "-GT" "-" "-GC" "-" "-GA" "-" "-GG" "-"
                       "G--" "-" "-G-" "-" "--G" "-"
                       "---" "-"}
-        allele       {:maj_p+   :maj_aa+  :maj_p-   :maj_aa-
-                      :min_p+   :min_aa+  :min_p-   :min_aa-}]
+        allele       {:maj+   :maj_aa+  :maj-   :maj_aa-
+                      :min+   :min_aa+  :min-   :min_aa-}]
     (->>(i/add-column
          (allele scanned_fwd)
          (->> (i/$ scanned_fwd file)

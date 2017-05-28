@@ -37,43 +37,45 @@
   (def un_coved    (cv/calc-coved cv/cov_un annotated))
 
   (println "Creating first consensus sequence")
-  (def fstsus      (cv/major-allele cv/maj_un un_coved))
+  (def fstsensus    (cv/major-allele cv/maj_un un_coved))
   
   (println "Correcting read errors")
-  (def poised      (cv/poissonize 0.05 fstsus))
-
+  (def minored
+  "minor allele-> cv/minorallize/poisson dist-> cv/poissonize"
+    (cv/get-minor-allele "minor allele" 0.05 fstsensus))
+  
   (println "Corrected dept adjustment")
-  (def pois_coved  (cv/calc-coved cv/cov_p poised))
+  (def coved  (cv/calc-coved cv/depth minored))
 
   (println "Creating second consensus sequence")
-  (def majored     (cv/major-allele cv/maj_p pois_coved))
+  (def majored     (cv/major-allele cv/maj coved))
 
   (println "Adding consensus negative strand")
-  (def neg_majored (da/pos>neg :maj_p+ :maj_p- majored))
+  (def neg_majored (da/pos>neg :maj+ :maj- majored))
   
   (println "Creating minor allele sequence")
   (def minored     (cv/minor-allele cv/min_p neg_majored))  
 
   (println "Adding negative strand")
-  (def neg_minored (da/pos>neg :min_p+ :min_p- minored))
+  (def neg_minored (da/pos>neg :min+ :min- minored))
   
   (println "adding consensus amino acids")
-  (def maj_aa      (da/nuc>aa  :maj_p+ :maj_p- neg_minored))
+  (def maj_aa      (da/nuc>aa  :maj+ :maj- neg_minored))
 
   (println "adding consensus amino acids")
-  (def min_aa      (da/nuc>aa :min_p+ :min_p- maj_aa))  
+  (def min_aa      (da/nuc>aa :min+ :min- maj_aa))  
 
   (def scrubed2 (i/$ [:r_seq
                       :merlin :ref-loc
                       :gene+ :gene- :CDS+ :CDS- :exon- :exon+
                       :ref :loc :maj_un+
-                      :cov :cov_un :cov_p
-                      :maj_p+ :min_p+ :maj_aa+ :min_aa+
-                      :maj_p- :min_p- :maj_aa- :min_aa-
-                      :Tpois :Apois :Cpois :Gpois] min_aa))
+                      :cov :cov_un :depth
+                      :maj+ :min+ :maj_aa+ :min_aa+
+                      :maj- :min- :maj_aa- :min_aa-
+                      :T :A :C :G] min_aa))
   
   (println "Calculating nucleotide diversity")
-  (def pied (p/pise p/pi_pois scrubed2))
+  (def pied (p/pise p/pi scrubed2))
 
   (println "Calculating folded allele frequency spectra")
   (def sfsd (p/SFS p/folded-SFS pied))

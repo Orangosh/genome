@@ -16,7 +16,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def cov_un [:cov_un [:Tun   :Aun   :Cun   :Gun  ]]);for variants calling
-(def cov_p  [:cov_p  [:Tpois :Apois :Cpois :Gpois]]);after variants
+(def cov_p  [:cov_p  [:Tpois :Apois :Cpois :Gpois]]);after poison variants
+(def depth  [:depth  [:T     :A     :C     :G  ]]);after cleaning
 
 (defn calc-coved [con_type file]
   "Calculation corrected coverage"
@@ -33,6 +34,7 @@
 
 (def maj_un [:maj_un+ [:Tun   :Aun   :Cun   :Gun  ]]);for variants calling
 (def maj_p  [:maj_p+  [:Tpois :Apois :Cpois :Gpois]]);after variants
+(def maj  [:maj+  [:T     :A     :C     :G ]]);after minor allele variants
 
 (defn get-major [T A C G] 
   (let [get_map {"T" T "A" A "C" C "G" G}] 
@@ -57,6 +59,7 @@
 
 (def min_un [:min_un+ [:Tun   :Aun   :Cun   :Gun  ]]) ;for variants calling
 (def min_p  [:min_p+  [:Tpois :Apois :Cpois :Gpois]]);after variants
+(def min    [:min+    [:T  :A  :C  :G ]]);after minor allele variants
 
 (defn get-minor [T A C G] 
   "Gets minor allels rand-nth- chooses equally apearing nucleotide at a site"
@@ -121,7 +124,49 @@
 (defn poissonize [p_value file]
   "Adds four columns of nucleotide filthered by poison distribution"
   (let [p (- 1 p_value)]
-    (->> (pois-correct :Aun :Apois p file)
-         (pois-correct :Tun :Tpois p)
-         (pois-correct :Cun :Cpois p)
-         (pois-correct :Gun :Gpois p))))
+    (->> file
+         (pois-correct :Aun :A p)
+         (pois-correct :Tun :T p)
+         (pois-correct :Cun :C p)
+         (pois-correct :Gun :G p))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ERROR FILTERING ASSUMING ALLELE FREQUENCY PRECENTAGE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn allele?  [col_var col_val maj_un cov_un minor_freq]
+  "Take a site read base and determent if it is in minimal minor allele def"
+ (if (= "-"  maj_un)
+   0
+   (if (<  minor_freq
+           (double (/ col_val cov_un)))
+     col_val
+     0)))
+  
+;adds new base var column after iteration over one base column
+(defn minor-correct [col_var col_name minor_freq file]
+  "Adds one column of nunleotide fithered by minor allele freq"
+  (->> file
+       (i/add-derived-column
+        col_name
+        [col_var :maj_un+ :cov_un]
+        #(allele? col_var %1 %2 %3 minor_freq))))
+
+
+(defn minorallize [minor_freq file]
+  "Adds four columns of nucleotide filthered by minor allele frequency"
+  (->> file
+       (minor-correct :Aun :A minor_freq)
+       (minor-correct :Tun :T minor_freq)
+       (minor-correct :Cun :C minor_freq)
+       (minor-correct :Gun :G minor_freq)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ERROR FILTERING METHOD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-minor-allele [method value file]
+  (case method
+    "minor allele" (minorallize value file)
+    "poisson dist" (poissonize  value file)))

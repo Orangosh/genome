@@ -83,7 +83,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn win-100 [file]
-  (p/m-slide-mean file :pi_pois :pi_slide 100)) 
+  (p/m-slide-mean file :pi :pi_slide 100)) 
 
 (defn les-win []
   (def W05-Pa  (win-100 (m-get-set L05-Pa  20)))
@@ -131,9 +131,9 @@
 (defn pi-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
-       (i/$ [:ref-loc :gene+ :CDS+ :loc :pi_pois
-             :cov_p :maj_p+ :min_p+ :maj_aa+ :min_aa+ 
-             :Tpois :Apois :Cpois :Gpois 
+       (i/$ [:ref-loc :gene+ :CDS+ :loc :pi
+             :depth :maj+ :min+ :maj_aa+ :min_aa+ 
+             :T     :A    :C    :G 
              :orf+ :majorf+ :minorf+])
        (i/$where (i/$fn [pi_pois] (= pi_pois 0.0)))))
 
@@ -141,8 +141,8 @@
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
        (i/$ [:ref-loc :gene+ :CDS+ :loc 
-             :cov_p :maj_p+ :min_p+ :maj_aa+ :min_aa+ 
-             :Tpois :Apois :Cpois :Gpois 
+             :depth :maj+ :min+ :maj_aa+ :min_aa+ 
+             :T     :A    :C    :G 
              :orf+ :majorf+ :minorf+])
        (i/$where (i/$fn [majorf+ minorf+] (not= majorf+ minorf+)))))
 

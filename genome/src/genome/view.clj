@@ -16,7 +16,7 @@
   ([file]
   (i/view (c/xy-plot
          :loc
-         :pie
+         :pi
          :x-label "Position"
          :y-label "diversity"
          :title "Pi win size"
@@ -25,7 +25,7 @@
   ([file cov_div]
   (-> (c/xy-plot
        :loc
-       :pie
+       :pi
        :x-label "Position"
        :y-label "diversity"
        :title "02-519Pb AKA''Blip'"
@@ -33,7 +33,7 @@
        :data file) 
       (c/add-lines
        :loc
-       (map #(float (/ % cov_div)) (i/$ :cov file)) ;:cov
+       (map #(float (/ % cov_div)) (i/$ :depth file)) ;:cov
        :data file)
       (i/view))))   
 

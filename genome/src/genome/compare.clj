@@ -22,46 +22,46 @@
   (->> file
        (i/add-derived-column
         (keyword (str snp "-fq"))
-        [(keyword snp) :cov_p]
+        [(keyword snp) :depth]
         #(if (= %2 0.0)
            0.0
            (/ %1 %2)))))
 
 (defn add-snp-precent [file]
   (->> file
-       (snp-precent "Tpois")
-       (snp-precent "Cpois")
-       (snp-precent "Apois")
-       (snp-precent "Gpois")))
+       (snp-precent "T")
+       (snp-precent "C")
+       (snp-precent "A")
+       (snp-precent "G")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE NEW COLUMN NAME
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sample1 {:Tpois :T1 :Tpois-fq :Tfq1
-              :Cpois :C1 :Cpois-fq :Cfq1
-              :Apois :A1 :Apois-fq :Afq1
-              :Gpois :G1 :Gpois-fq :Gfq1
-              :cov_p :cov1 :pi_pois :pi1
+(def sample1 {:T :T1 :T-fq :Tfq1
+              :C :C1 :C-fq :Cfq1
+              :A :A1 :A-fq :Afq1
+              :G :G1 :G-fq :Gfq1
+              :depth   :depth1   :pi      :pi1
               :ref-loc :ref-loc1 :maj_un+ :maj_un+1
-              :maj_p+  :maj_p+1  :min_p+  :min_p+1
+              :maj+    :maj+1    :min+    :min+1
               :maj_aa+ :maj_aa+1 :min_aa+ :min_aa+1
-              :maj_p-  :maj_p-1  :min_p-  :min_p-1
-              :maj_aa- :maj_aa-1 :min_aa-  :min_aa-1 
+              :maj-    :maj-1    :min-    :min-1
+              :maj_aa- :maj_aa-1 :min_aa- :min_aa-1 
               :majorf+ :majorf+1 :minorf+ :minorf+1
               :majorf- :majorf-1 :minorf- :minorf-1})
 
-(def sample2 {:Tpois :T2 :Tpois-fq :Tfq2
-              :Cpois :C2 :Cpois-fq :Cfq2
-              :Apois :A2 :Apois-fq :Afq2
-              :Gpois :G2 :Gpois-fq :Gfq2
-              :cov_p :cov2 :pi_pois :pi2
+(def sample2 {:T :T2 :Tfq :Tfq2
+              :C :C2 :C-fq :Cfq2
+              :A :A2 :A-fq :Afq2
+              :G :G2 :G-fq :Gfq2
+              :depth   :depth2   :pi      :pi2
               :ref-loc :ref-loc2 :maj_un+ :maj_un+2
-              :maj_p+  :maj_p+2  :min_p+  :min_p+2
+              :maj+    :maj+2    :min+    :min+2
               :maj_aa+ :maj_aa+2 :min_aa+ :min_aa+2
-              :maj_p-  :maj_p-2  :min_p-  :min_p-2
-              :maj_aa- :maj_aa-2 :min_aa-  :min_aa-2 
+              :maj-    :maj-2    :min-    :min-2
+              :maj_aa- :maj_aa-2 :min_aa- :min_aa-2 
               :majorf+ :majorf+2 :minorf+ :minorf+2
               :majorf- :majorf-2 :minorf- :minorf-2})
 
@@ -98,17 +98,17 @@
     (->>(p-unite snp1 snp2)
         (i/$ [:merlin   :loc      :gene+    :gene-
               :CDS+     :CDS-     :exon+    :exon-
-              :ref-loc1 :cov1     :pi1      :maj_un+1        
+              :ref-loc1 :depth1   :pi1      :maj_un+1        
               :A1       :Afq1     :T1       :Tfq1
               :G1       :Gfq1     :C1       :Cfq1 
-              :maj_p+1  :min_p+1  :maj_aa+1 :min_aa+1 
-              :maj_p-1  :min_p-1  :maj_aa-1 :min_aa-1
+              :maj+1    :min+1    :maj_aa+1 :min_aa+1 
+              :maj-1    :min-1    :maj_aa-1 :min_aa-1
               :majorf+1 :minorf+1 :majorf-1 :minorf-1
-              :ref-loc2 :cov2     :pi2      :maj_un+2 
+              :ref-loc2 :depth2     :pi2      :maj_un+2 
               :A2       :Afq2     :T2       :Tfq2
               :G2       :Gfq2     :C2       :Cfq2 
-              :maj_p+2  :min_p+2  :maj_aa+2 :min_aa+2
-              :maj_p-2  :min_p-2  :maj_aa-2 :min_aa-2
+              :maj+2    :min+2    :maj_aa+2 :min_aa+2
+              :maj-2    :min-2    :maj_aa-2 :min_aa-2
               :majorf+2 :minorf+2 :majorf-2 :minorf-2]))))
 
 
@@ -121,25 +121,25 @@
   (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc  :gene+ :gene-
             :CDS+     :CDS- :exon+ :exon-
-            :ref-loc1 :cov1 :pi1  
+            :ref-loc1 :depth1 :pi1  
             :A1   :T1 :G1   :C1 
-            :ref-loc2 :cov2 :pi2
+            :ref-loc2 :depth2 :pi2
             :A2   :T2 :G2   :C2 
-            :maj_un+1 :maj_un+2])))
+            :maj+1    :maj+2])))
 
 (defn aa-variants [file1 file2]
   "Shows alleles from two samples at same site"
   (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc      :gene+    :gene-
             :CDS+     :CDS-     :exon+    :exon-
-            :ref-loc1 :cov1
+            :ref-loc1 :depth1
             :A1       :T1       :G1       :C1 
-            :ref-loc2 :cov2
+            :ref-loc2 :depth2
             :A2       :T2       :G2       :C2 
             :pi1      :pi2      :maj_un+1 :maj_un+2
-            :maj_p+1  :maj_p+2  :min_p+1  :min_p+2
+            :maj+1    :maj+2    :min+1    :min+2
             :maj_aa+1 :maj_aa+2 :min_aa+1 :min_aa+2
-            :maj_p-1  :maj_p-2  :min_p-1  :min_p-2
+            :maj-1    :maj-2    :min-1    :min-2
             :maj_aa-1 :maj_aa-2 :min_aa-1 :min_aa-2
             :majorf+1 :majorf+2 :minorf+1 :minorf+2
             :majorf-1 :majorf-2 :minorf-1 :minorf-2])))
@@ -151,10 +151,10 @@
             :CDS+     :CDS-     
             :cov1 :Afq1 :Tfq1 :Gfq1 :Cfq1
             :cov2 :Afq2 :Tfq2 :Gfq2 :Cfq2])
-      ( #(i/conj-rows (i/$ [:cov1 :cov2 :ref-loc :Afq1 :Afq2]  %)
-                      (i/$ [:cov1 :cov2 :ref-loc :Tfq1 :Tfq2]  %)
-                      (i/$ [:cov1 :cov2 :ref-loc :Cfq1 :Cfq2]  %)
-                      (i/$ [:cov1 :cov2 :ref-loc :Gfq1 :Gfq2]  %) ))
+      ( #(i/conj-rows (i/$ [:depth1 :depth2 :ref-loc :Afq1 :Afq2]  %)
+                      (i/$ [:depth1 :depth2 :ref-loc :Tfq1 :Tfq2]  %)
+                      (i/$ [:depth1 :depth2 :ref-loc :Cfq1 :Cfq2]  %)
+                      (i/$ [:depth1 :depth2 :ref-loc :Gfq1 :Gfq2]  %) ))
       (i/rename-cols {:Afq1 :fq1 :Afq2 :fq2})
       (i/$where (i/$fn [fq1 fq2] (or (> fq1 0.0) (> fq2 0.0)))) 
       (i/$where (i/$fn [fq1 fq2] (or (< fq1 1.0) (< fq2 1.0))))                    
@@ -163,7 +163,7 @@
 (defn diversity-change [file1 file2]
   "compares diversity change between two sites"
   (->>(create-dataset file1 file2)
-      (i/$ [:loc :ref-loc1 :cov1 :pi1 :cov2 :pi2])
+      (i/$ [:loc :ref-loc1 :depth1 :pi1 :depth2 :pi2])
       (i/add-derived-column
        :gap
        [:pi2 :pi1]
