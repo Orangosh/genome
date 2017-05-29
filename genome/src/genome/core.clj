@@ -54,7 +54,7 @@
   (def neg_majored (da/pos>neg :maj+ :maj- majored))
   
   (println "Creating minor allele sequence")
-  (def minored     (cv/minor-allele cv/min_p neg_majored))  
+  (def minored     (cv/minor-allele cv/min neg_majored))  
 
   (println "Adding negative strand")
   (def neg_minored (da/pos>neg :min+ :min- minored))

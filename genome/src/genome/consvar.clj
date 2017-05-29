@@ -15,9 +15,8 @@
 ;CORRECT COVERAGE 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def cov_un [:cov_un [:Tun   :Aun   :Cun   :Gun  ]]);for variants calling
-(def cov_p  [:cov_p  [:Tpois :Apois :Cpois :Gpois]]);after poison variants
-(def depth  [:depth  [:T     :A     :C     :G  ]]);after cleaning
+(def cov_un [:cov_un [:Tun :Aun :Cun :Gun]]);for variants calling
+(def depth  [:depth  [:T   :A   :C   :G  ]]);after cleaning
 
 (defn calc-coved [con_type file]
   "Calculation corrected coverage"
@@ -32,9 +31,8 @@
 ;CALL CONSENSUS- MAJOR ALLELE SEQUENCE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def maj_un [:maj_un+ [:Tun   :Aun   :Cun   :Gun  ]]);for variants calling
-(def maj_p  [:maj_p+  [:Tpois :Apois :Cpois :Gpois]]);after variants
-(def maj  [:maj+  [:T     :A     :C     :G ]]);after minor allele variants
+(def maj_un [:maj_un+ [:Tun :Aun :Cun :Gun]]);for variants calling
+(def maj    [:maj+    [:T   :A   :C   :G  ]]);after minor allele variants
 
 (defn get-major [T A C G] 
   (let [get_map {"T" T "A" A "C" C "G" G}] 
@@ -57,9 +55,8 @@
 ;CALL VARIANTS-MINOR ALLELE SEQUENCE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def min_un [:min_un+ [:Tun   :Aun   :Cun   :Gun  ]]) ;for variants calling
-(def min_p  [:min_p+  [:Tpois :Apois :Cpois :Gpois]]);after variants
-(def min    [:min+    [:T  :A  :C  :G ]]);after minor allele variants
+(def min_un [:min_un+ [:Tun :Aun :Cun :Gun]]);for variants calling
+(def min    [:min+    [:T   :A   :C   :G  ]]);after minor allele variants
 
 (defn get-minor [T A C G] 
   "Gets minor allels rand-nth- chooses equally apearing nucleotide at a site"
