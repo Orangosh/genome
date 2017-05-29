@@ -1,4 +1,4 @@
-(ns genome.analyze
+o(ns genome.analyze
   (require [clojure.java.io   :as io ]
            [incanter.core     :as i  ]
            [incanter.io       :as ii ]
@@ -15,9 +15,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE FILE LOCATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(def home                  "/home/yosh/datafiles/")
-(def input_file  (str home "genes/merlin.gff3"  ))
-(def output_file (str home "genes/merlin.inc"   ))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For PC
+
+;(def home                  "/home/yosh/datafiles/")
+;(def input_file  (str home "genes/merlin.gff3"   ))
+;(def output_file (str home "genes/merlin.inc"    ))
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For Server
+
+(def home                  "/mnt/data/datafiles/"  )
+(def input_file  (str home "concensus/merlin.gff3"))
+(def output_file (str home "concensus/refset.inc" ))
+
 
 
 (def L05-Pa  (str home "incanted_files/505-Pa.inc" ))

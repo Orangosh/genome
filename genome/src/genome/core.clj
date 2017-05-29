@@ -42,19 +42,19 @@
   (println "Correcting read errors")
   (def minored
   "minor allele-> cv/minorallize/poisson dist-> cv/poissonize"
-    (cv/get-minor-allele "minor allele" 0.05 fstsensus))
+    (cv/get-minor-allele "poisson dist" 0.01 fstsensus))
   
   (println "Corrected dept adjustment")
   (def coved  (cv/calc-coved cv/depth minored))
 
   (println "Creating second consensus sequence")
-  (def majored     (cv/major-allele cv/maj coved))
+  (def majored     (cv/major-allele cv/major coved))
 
   (println "Adding consensus negative strand")
   (def neg_majored (da/pos>neg :maj+ :maj- majored))
   
   (println "Creating minor allele sequence")
-  (def minored     (cv/minor-allele cv/min neg_majored))  
+  (def minored     (cv/minor-allele cv/minor neg_majored))  
 
   (println "Adding negative strand")
   (def neg_minored (da/pos>neg :min+ :min- minored))
@@ -87,14 +87,5 @@
     (csv/write-csv f-out [(map name (i/col-names orfd))])
     (csv/write-csv f-out (i/to-list orfd))))
 
-(defn ready []
-  (-main "/home/yosh/datafiles/experiment/mpileup" 
-         "/home/yosh/datafiles/experiment/incanter"
-         "/home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
-         "/home/yosh/datafiles/genes/merlin.gff3"))
 
-
-(defn show[from length]
-  (def incanted (ii/read-dataset "/home/yosh/datafiles/incanter" :header true))
-  (i/$ (range from (+ from length)) :all incanted))
 

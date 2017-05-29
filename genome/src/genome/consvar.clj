@@ -32,7 +32,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def maj_un [:maj_un+ [:Tun :Aun :Cun :Gun]]);for variants calling
-(def maj    [:maj+    [:T   :A   :C   :G  ]]);after minor allele variants
+(def major  [:maj+    [:T   :A   :C   :G  ]]);after minor allele variants
 
 (defn get-major [T A C G] 
   (let [get_map {"T" T "A" A "C" C "G" G}] 
@@ -56,7 +56,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def min_un [:min_un+ [:Tun :Aun :Cun :Gun]]);for variants calling
-(def min    [:min+    [:T   :A   :C   :G  ]]);after minor allele variants
+(def minor  [:min+    [:T   :A   :C   :G  ]]);after minor allele variants
 
 (defn get-minor [T A C G] 
   "Gets minor allels rand-nth- chooses equally apearing nucleotide at a site"
