@@ -83,6 +83,45 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;PRE-POISSON FILTERING ALLELE FREQUENCY PRECENTAGE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                                                                                                  
+
+(defn get-freq  [col_val maj_un cov_un]
+  "Take a site read base and determent if it is in minimal minor allele def"
+ (if (= "-"  maj_un)
+   0.0
+   (double (/ col_val cov_un))))
+
+
+(defn add-freq-col [col_var col_name file]
+  "Adds one column of nunleotide fithered by minor allele freq"
+  (->> file
+       (i/add-derived-column
+        col_name
+        [col_var :maj_un+ :cov_un]
+	#(get-freq %1 %2 %3))))
+
+(defn get-second [A T C G]
+  "adds new base var column after iteration over one base column"
+  (->> (vector A T C G)
+       sort
+       reverse
+       second))
+
+
+(defn minorify [file]
+  "Adds four columns of nucleotide filthered by minor allele frequency"
+  (->> file
+       (add-freq-col :Aun :Afr)
+       (add-freq-col :Tun :Tfr)
+       (add-freq-col :Cun :Cfr)
+       (add-freq-col :Gun :Gfr)
+       (i/add-derived-column
+        :minfr
+        [:Afr :Tfr :Cfr :Gfr]
+        #(get-second %1 %2 %3 %4))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;ERROR FILTERING ASSUMING POISSON DISTRIBUTION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -127,9 +166,33 @@
          (pois-correct :Cun :C p)
          (pois-correct :Gun :G p))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;ERROR FILTERING METHOD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-minor-allele [pois_p file]
+  (if (= 1 pois_p)
+    (i/rename-cols {:Aun :A :Tun :T :Cun :C :Gun :G} (minorify file))
+    (poissonize pois_p (minorify file))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ERROR FILTERING ASSUMING ALLELE FREQUENCY PRECENTAGE
+;ERROR FILTERING ASSUMING ALLELE FREQUENCY PRECENTAGE NOT IN USE!!!!!!!!!!!!
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn allele?  [col_var col_val maj_un cov_un minor_freq]
@@ -158,12 +221,3 @@
        (minor-correct :Tun :T minor_freq)
        (minor-correct :Cun :C minor_freq)
        (minor-correct :Gun :G minor_freq)))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ERROR FILTERING METHOD
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-minor-allele [method value file]
-  (case method
-    "minor allele" (minorallize value file)
-    "poisson dist" (poissonize  value file)))

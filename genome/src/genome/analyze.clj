@@ -1,4 +1,4 @@
-o(ns genome.analyze
+(ns genome.analyze
   (require [clojure.java.io   :as io ]
            [incanter.core     :as i  ]
            [incanter.io       :as ii ]

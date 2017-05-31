@@ -41,8 +41,8 @@
   
   (println "Correcting read errors")
   (def minored
-  "minor allele-> cv/minorallize/poisson dist-> cv/poissonize"
-    (cv/get-minor-allele "poisson dist" 0.01 fstsensus))
+  "first value the p-value of poisson if 1- no possion filtering"
+    (cv/get-minor-allele 0.01 fstsensus))
   
   (println "Corrected dept adjustment")
   (def coved  (cv/calc-coved cv/depth minored))
@@ -72,7 +72,7 @@
                       :cov :cov_un :depth
                       :maj+ :min+ :maj_aa+ :min_aa+
                       :maj- :min- :maj_aa- :min_aa-
-                      :T :A :C :G] min_aa))
+                      :T :A :C :G :minfr] min_aa))
   
   (println "Calculating nucleotide diversity")
   (def pied (p/pise p/pi scrubed2))
@@ -87,5 +87,9 @@
     (csv/write-csv f-out [(map name (i/col-names orfd))])
     (csv/write-csv f-out (i/to-list orfd))))
 
-
+(defn ready []
+  (-main "/home/yosh/datafiles/experiment/mpileup" 
+         "/home/yosh/datafiles/experiment/incanter"
+         "/home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
+         "/home/yosh/datafiles/genes/merlin.gff3"))
 
