@@ -87,9 +87,5 @@
     (csv/write-csv f-out [(map name (i/col-names orfd))])
     (csv/write-csv f-out (i/to-list orfd))))
 
-(defn ready []
-  (-main "/home/yosh/datafiles/experiment/mpileup" 
-         "/home/yosh/datafiles/experiment/incanter"
-         "/home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
-         "/home/yosh/datafiles/genes/merlin.gff3"))
+
 

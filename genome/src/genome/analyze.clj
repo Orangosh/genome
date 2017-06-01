@@ -19,16 +19,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
 
-(def home                  "/home/yosh/datafiles/")
-(def input_file  (str home "genes/merlin.gff3"   ))
-(def output_file (str home "genes/merlin.inc"    ))
+;;(def home                  "/home/yosh/datafiles/")
+;;(def input_file  (str home "genes/merlin.gff3"   ))
+;;(def output_file (str home "genes/merlin.inc"    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
 
-;;(def home                  "/mnt/data/datafiles/"  )
-;;(def input_file  (str home "concensus/merlin.gff3"))
-;;(def output_file (str home "concensus/refset.inc" ))
+(def home                  "/mnt/data/datafiles/"  )
+(def input_file  (str home "concensus/merlin.gff3"))
+(def output_file (str home "concensus/refset.inc" ))
 
 
 
@@ -134,6 +134,9 @@
 ;SINGLE SAMPLE ANALYSIS- GET COMMON FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions for understanding minor allele cutoff
+
 (defn fr-dist [dep mfr file] 
   "toll for visualizing minor variant frequencies and FP + Depth"
   (i/$where (i/$fn [depth minfr]
@@ -144,7 +147,7 @@
                   :depth :T :A  :C :G   :minfr :pi ] 
                  file)))
 
-(defn pi-view [file1 file2 dep]
+(defn all-freq-view [file1 file2 dep]
                   (-> (c/xy-plot   :loc :minfr
                        :x-label "Position" :y-label "Minor variants frequency"
                        :title (str dep " minimal")
@@ -171,6 +174,10 @@
   "get all poisson filtered data which is poistive under certain minor freq (mfr)"
   (i/$where (i/$fn [pi] (> pi 0.0)) (fr-dist file dep mfr)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Different Data slicing methods
+
 (defn pi-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
@@ -189,6 +196,8 @@
              :orf+ :majorf+ :minorf+])
        (i/$where (i/$fn [majorf+ minorf+] (not= majorf+ minorf+)))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Get genes
 
 (import '(org.jfree.chart StandardChartTheme)
         '(org.jfree.chart.plot DefaultDrawingSupplier)
@@ -201,6 +210,7 @@
        (getNextPaint [] Color/blue)))))
 
 (defn get-gene [function col file]
+  "function is any filter/ col is usualy :gene+/-"
   (let [general (->> file
                      (i/$ col)
                      frequencies
@@ -350,24 +360,40 @@
      [(m-get-range-set :CDS-  false An19-Pb)
       "/home/yosh/Software/git/visual/circos/resources/public/data/CDSneg.csv"]]))
 (defn circosing2 []     
-    [[W05-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W05-Pa.csv" ]
-     [W05-M   "/home/yosh/Software/git/visual/circos/resources/public/data/W05-M.csv"  ]
+  [[W05-Pa
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W05-Pa.csv" ]
+   [W05-M
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W05-M.csv"  ]
 
-     [W19-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pb.csv" ]     [W19-Pc  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pc.csv" ]
-     [W19-Pd  "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pd.csv" ]
-     [W19-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W19-S1a.csv"]])
+   [W19-Pb
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pb.csv" ]
+   [W19-Pc
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pc.csv" ]
+   [W19-Pd
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W19-Pd.csv" ]
+   [W19-S1a
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W19-S1a.csv"]])
 (defn circosing3 []          
-     [[W20-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pa.csv" ]
-     [W20-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pb.csv" ]
-     [W20-Pc  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pc.csv" ]
-     [W20-S1  "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1.csv" ]
-     [S19-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1a.csv"]
-
-     [W79-Pa  "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pa.csv" ]
-     [W79-Pb  "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pb.csv" ]
-     [W79-M   "/home/yosh/Software/git/visual/circos/resources/public/data/W79-M.csv"  ]
-     [W79-S1a "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1a.csv"]
-     [W79-S1b "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1b.csv"]     ])
+  [[W20-Pa
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pa.csv" ]
+   [W20-Pb
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pb.csv" ]
+   [W20-Pc
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W20-Pc.csv" ]
+   [W20-S1
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1.csv" ]
+   [S19-S1a
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W20-S1a.csv"]
+   [W79-Pa
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pa.csv" ]
+   [W79-Pb
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W79-Pb.csv" ]
+   [W79-M
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W79-M.csv"  ]
+   [W79-S1a
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1a.csv"]
+   [W79-S1b
+    "/home/yosh/Software/git/visual/circos/resources/public/data/W79-S1b.csv"]])
 
 
 (defn circos [circosing]

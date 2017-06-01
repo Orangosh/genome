@@ -42,7 +42,7 @@
 (def sample1 {:T :T1 :T-fq :Tfq1
               :C :C1 :C-fq :Cfq1
               :A :A1 :A-fq :Afq1
-              :G :G1 :G-fq :Gfq1
+              :G :G1 :G-fq :Gfq1 :minfr   :minfr1
               :depth   :depth1   :pi      :pi1
               :ref-loc :ref-loc1 :maj_un+ :maj_un+1
               :maj+    :maj+1    :min+    :min+1
@@ -55,7 +55,7 @@
 (def sample2 {:T :T2 :Tfq :Tfq2
               :C :C2 :C-fq :Cfq2
               :A :A2 :A-fq :Afq2
-              :G :G2 :G-fq :Gfq2
+              :G :G2 :G-fq :Gfq2 :minfr   :minfr2
               :depth   :depth2   :pi      :pi2
               :ref-loc :ref-loc2 :maj_un+ :maj_un+2
               :maj+    :maj+2    :min+    :min+2
@@ -100,13 +100,13 @@
               :CDS+     :CDS-     :exon+    :exon-
               :ref-loc1 :depth1   :pi1      :maj_un+1        
               :A1       :Afq1     :T1       :Tfq1
-              :G1       :Gfq1     :C1       :Cfq1 
+              :G1       :Gfq1     :C1       :Cfq1    :minfr1
               :maj+1    :min+1    :maj_aa+1 :min_aa+1 
               :maj-1    :min-1    :maj_aa-1 :min_aa-1
               :majorf+1 :minorf+1 :majorf-1 :minorf-1
-              :ref-loc2 :depth2     :pi2      :maj_un+2 
+              :ref-loc2 :depth2   :pi2      :maj_un+2 
               :A2       :Afq2     :T2       :Tfq2
-              :G2       :Gfq2     :C2       :Cfq2 
+              :G2       :Gfq2     :C2       :Cfq2    :minfr2 
               :maj+2    :min+2    :maj_aa+2 :min_aa+2
               :maj-2    :min-2    :maj_aa-2 :min_aa-2
               :majorf+2 :minorf+2 :majorf-2 :minorf-2]))))
@@ -121,9 +121,9 @@
   (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc  :gene+ :gene-
             :CDS+     :CDS- :exon+ :exon-
-            :ref-loc1 :depth1 :pi1  
+            :ref-loc1 :depth1 :pi1 :minfr1
             :A1   :T1 :G1   :C1 
-            :ref-loc2 :depth2 :pi2
+            :ref-loc2 :depth2 :pi2 :minfr2
             :A2   :T2 :G2   :C2 
             :maj+1    :maj+2])))
 
@@ -132,9 +132,9 @@
   (->>(create-dataset file1 file2)
       (i/$ [:merlin   :loc      :gene+    :gene-
             :CDS+     :CDS-     :exon+    :exon-
-            :ref-loc1 :depth1
+            :ref-loc1 :depth1   :minfr1
             :A1       :T1       :G1       :C1 
-            :ref-loc2 :depth2
+            :ref-loc2 :depth2   :minfr2
             :A2       :T2       :G2       :C2 
             :pi1      :pi2      :maj_un+1 :maj_un+2
             :maj+1    :maj+2    :min+1    :min+2
@@ -163,7 +163,7 @@
 (defn diversity-change [file1 file2]
   "compares diversity change between two sites"
   (->>(create-dataset file1 file2)
-      (i/$ [:loc :ref-loc1 :depth1 :pi1 :depth2 :pi2])
+      (i/$ [:loc :ref-loc1 :depth1 :pi1 :minfr1 :depth2 :pi2 :minfr2])
       (i/add-derived-column
        :gap
        [:pi2 :pi1]
