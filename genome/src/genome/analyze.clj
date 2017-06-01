@@ -19,16 +19,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
 
-;(def home                  "/home/yosh/datafiles/")
-;(def input_file  (str home "genes/merlin.gff3"   ))
-;(def output_file (str home "genes/merlin.inc"    ))
+(def home                  "/home/yosh/datafiles/")
+(def input_file  (str home "genes/merlin.gff3"   ))
+(def output_file (str home "genes/merlin.inc"    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
 
-(def home                  "/mnt/data/datafiles/"  )
-(def input_file  (str home "concensus/merlin.gff3"))
-(def output_file (str home "concensus/refset.inc" ))
+;;(def home                  "/mnt/data/datafiles/"  )
+;;(def input_file  (str home "concensus/merlin.gff3"))
+;;(def output_file (str home "concensus/refset.inc" ))
 
 
 
@@ -60,35 +60,29 @@
 (defn get-set [file cov]
   "open an csv.inc file"
   (->> (ii/read-dataset file :header true)
-       (i/$where (i/$fn [cov_p] (< cov cov_p)))))
+       (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn get-set [file cov]
-  "open an csv.inc file"
-  (->> (ii/read-dataset file :header true)
-       (i/$where (i/$fn [cov_p] (< cov cov_p)))))
-  (def m-get-set (memoize get-set))
-
 (defn les-sets [])
-(def S05-Pa  (m-get-set L05-Pa  20))
-(def S05-M   (m-get-set L05-M   20))
+(def S05-Pa  (m-get-set L05-Pa  0))
+(def S05-M   (m-get-set L05-M   0))
 
-(def S19-Pb  (m-get-set L19-Pb  20))
-(def S19-Pc  (m-get-set L19-Pc  20))
-(def S19-Pd  (m-get-set L19-Pd  20))
-(def S19-S1a (m-get-set L19-S1a 20))
+(def S19-Pb  (m-get-set L19-Pb  0))
+(def S19-Pc  (m-get-set L19-Pc  0))
+(def S19-Pd  (m-get-set L19-Pd  0))
+(def S19-S1a (m-get-set L19-S1a 0))
 
-(def S20-Pa  (m-get-set L20-Pa  20))
-(def S20-Pb  (m-get-set L20-Pb  20))
-(def S20-Pc  (m-get-set L20-Pc  20))
-(def S20-S1  (m-get-set L20-S1  20)) 
-(def S20-S1a (m-get-set L20-S1a 20))
+(def S20-Pa  (m-get-set L20-Pa  0))
+(def S20-Pb  (m-get-set L20-Pb  0))
+(def S20-Pc  (m-get-set L20-Pc  0))
+(def S20-S1  (m-get-set L20-S1  0)) 
+(def S20-S1a (m-get-set L20-S1a 0))
   
-(def S79-Pa  (m-get-set L79-Pa  20))
-(def S79-Pb  (m-get-set L79-Pb  20))
-(def S79-M   (m-get-set L79-M   20))
-(def S79-S1a (m-get-set L79-S1a 20))
-(def S79-S1b (m-get-set L79-S1b 20))
+(def S79-Pa  (m-get-set L79-Pa  0))
+(def S79-Pb  (m-get-set L79-Pb  0))
+(def S79-M   (m-get-set L79-M   0))
+(def S79-S1a (m-get-set L79-S1a 0))
+(def S79-S1b (m-get-set L79-S1b 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
@@ -140,6 +134,43 @@
 ;SINGLE SAMPLE ANALYSIS- GET COMMON FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn fr-dist [dep mfr file] 
+  "toll for visualizing minor variant frequencies and FP + Depth"
+  (i/$where (i/$fn [depth minfr]
+                   (and (> depth dep)
+                        (< minfr mfr)))  
+            (i/$ [:ref-loc  :gene+ :gene- 
+                  :CDS+     :CDS-  :ref :loc 
+                  :depth :T :A  :C :G   :minfr :pi ] 
+                 file)))
+
+(defn pi-view [file1 file2 dep]
+                  (-> (c/xy-plot   :loc :minfr
+                       :x-label "Position" :y-label "Minor variants frequency"
+                       :title (str dep " minimal")
+                       :data (fr-dist file1 dep 1.0)) 
+                      (c/add-lines :loc :minfr
+                       :data (fr-dist file2 dep 1.0 ))
+                      (c/add-lines :loc  :minfr
+                       :data (fr-dist file1 dep 0.1))
+                      (c/add-lines :loc  :minfr
+                       :data (fr-dist file2 dep 0.1))
+                      (c/add-lines :loc  :minfr
+                       :data (fr-dist file1 dep 0.003))
+                      (c/add-lines :loc  :minfr
+                       :data (fr-dist file2 dep 0.003))
+                      (c/add-lines :loc 
+                       (map #(/ % 100000) (i/$ :depth file1))
+                       :data  file1)
+                      (c/add-lines :loc 
+                       (map #(/ % 10000) (i/$ :depth file2))
+                       :data  file2)
+                      (i/view)))   
+
+(defn poisson-nonfilthered [dep mfr file]
+  "get all poisson filtered data which is poistive under certain minor freq (mfr)"
+  (i/$where (i/$fn [pi] (> pi 0.0)) (fr-dist file dep mfr)))
+
 (defn pi-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
@@ -189,6 +220,7 @@
           [:sum :refsum]
           #(double (/ %1 %2)))
          (i/$order :ratio :desc))))
+
 
 
 (defn view-gene [function col filename file]
