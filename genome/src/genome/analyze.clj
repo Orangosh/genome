@@ -31,7 +31,7 @@
 (def output_file (str home "concensus/refset.inc" ))
 
 
-
+ 
 (def L05-Pa  (str home "incanted_files/505-Pa.inc" ))
 (def L05-M   (str home "incanted_files/505-M.inc"  ))
 
@@ -63,26 +63,26 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn les-sets [])
-(def S05-Pa  (m-get-set L05-Pa  0))
-(def S05-M   (m-get-set L05-M   0))
+(defn les-sets []
+  (def S05-Pa  (m-get-set L05-Pa  0))
+  (def S05-M   (m-get-set L05-M   0))
 
-(def S19-Pb  (m-get-set L19-Pb  0))
-(def S19-Pc  (m-get-set L19-Pc  0))
-(def S19-Pd  (m-get-set L19-Pd  0))
-(def S19-S1a (m-get-set L19-S1a 0))
+  (def S19-Pb  (m-get-set L19-Pb  0))
+  (def S19-Pc  (m-get-set L19-Pc  0))
+  (def S19-Pd  (m-get-set L19-Pd  0))
+  (def S19-S1a (m-get-set L19-S1a 0))
 
-(def S20-Pa  (m-get-set L20-Pa  0))
-(def S20-Pb  (m-get-set L20-Pb  0))
-(def S20-Pc  (m-get-set L20-Pc  0))
-(def S20-S1  (m-get-set L20-S1  0)) 
-(def S20-S1a (m-get-set L20-S1a 0))
+  (def S20-Pa  (m-get-set L20-Pa  0))
+  (def S20-Pb  (m-get-set L20-Pb  0))
+  (def S20-Pc  (m-get-set L20-Pc  0))
+  (def S20-S1  (m-get-set L20-S1  0)) 
+  (def S20-S1a (m-get-set L20-S1a 0))
   
-(def S79-Pa  (m-get-set L79-Pa  0))
-(def S79-Pb  (m-get-set L79-Pb  0))
-(def S79-M   (m-get-set L79-M   0))
-(def S79-S1a (m-get-set L79-S1a 0))
-(def S79-S1b (m-get-set L79-S1b 0))
+  (def S79-Pa  (m-get-set L79-Pa  0))
+  (def S79-Pb  (m-get-set L79-Pb  0))
+  (def S79-M   (m-get-set L79-M   0))
+  (def S79-S1a (m-get-set L79-S1a 0))
+  (def S79-S1b (m-get-set L79-S1b 0)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
@@ -359,6 +359,7 @@
       "/home/yosh/Software/git/visual/circos/resources/public/data/CDSpos.csv"]
      [(m-get-range-set :CDS-  false An19-Pb)
       "/home/yosh/Software/git/visual/circos/resources/public/data/CDSneg.csv"]]))
+
 (defn circosing2 []     
   [[W05-Pa
     "/home/yosh/Software/git/visual/circos/resources/public/data/W05-Pa.csv" ]
@@ -409,6 +410,6 @@
       (csv/write-csv f-out [(map name (i/col-names file_in))])
       (csv/write-csv f-out (i/to-list file_in)))))
 
-(defn map-circos-sets []
+(defn map-circos-sets [circosing]
   (map #(circos %) circosing))
     
