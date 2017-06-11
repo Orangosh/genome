@@ -43,7 +43,7 @@
 
 (defn  col-rename [file ser_num]
   "This one is for adding a serial number at the end of a col name"
-  (let [dont-change #{ :loc :merlin}
+  (let [dont-change #{ :loc :merlin :gene+ :gene- :CDS+ :CDS- :exon+ :exon-}
         old-cols (apply vector (remove #(contains? dont-change %)
                                        (i/col-names file)))
         new-cols (->> old-cols
