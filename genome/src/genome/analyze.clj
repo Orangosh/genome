@@ -63,26 +63,26 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn les-sets []
-  (def S05-Pa  (m-get-set L05-Pa  0))
-  (def S05-M   (m-get-set L05-M   0))
+(defn les-sets [])
+(def S05-Pa  (m-get-set L05-Pa  0))
+(def S05-M   (m-get-set L05-M   0))
 
-  (def S19-Pb  (m-get-set L19-Pb  0))
-  (def S19-Pc  (m-get-set L19-Pc  0))
-  (def S19-Pd  (m-get-set L19-Pd  0))
-  (def S19-S1a (m-get-set L19-S1a 0))
+(def S19-Pb  (m-get-set L19-Pb  0))
+(def S19-Pc  (m-get-set L19-Pc  0))
+(def S19-Pd  (m-get-set L19-Pd  0))
+(def S19-S1a (m-get-set L19-S1a 0))
 
-  (def S20-Pa  (m-get-set L20-Pa  0))
-  (def S20-Pb  (m-get-set L20-Pb  0))
-  (def S20-Pc  (m-get-set L20-Pc  0))
-  (def S20-S1  (m-get-set L20-S1  0)) 
-  (def S20-S1a (m-get-set L20-S1a 0))
+(def S20-Pa  (m-get-set L20-Pa  0))
+(def S20-Pb  (m-get-set L20-Pb  0))
+(def S20-Pc  (m-get-set L20-Pc  0))
+(def S20-S1  (m-get-set L20-S1  0)) 
+(def S20-S1a (m-get-set L20-S1a 0))
   
-  (def S79-Pa  (m-get-set L79-Pa  0))
-  (def S79-Pb  (m-get-set L79-Pb  0))
-  (def S79-M   (m-get-set L79-M   0))
-  (def S79-S1a (m-get-set L79-S1a 0))
-  (def S79-S1b (m-get-set L79-S1b 0)))
+(def S79-Pa  (m-get-set L79-Pa  0))
+(def S79-Pb  (m-get-set L79-Pb  0))
+(def S79-M   (m-get-set L79-M   0))
+(def S79-S1a (m-get-set L79-S1a 0))
+(def S79-S1b (m-get-set L79-S1b 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
@@ -261,14 +261,6 @@
 ;COMPARISON ANALYSES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn seq-compare [comp_type file1 file2 ]
-  (case comp_type
-    "n-var" (gc/nuc-variants     file1 file2)
-    "a-var" (gc/aa-variants      file1 file2)
-    "all"   (gc/allele-change    file1 file2)
-    "div"   (gc/diversity-change file1 file2)))
-(def m-compare (memoize seq-compare))
-
 (defn clean-proc [comp_file]
   "Adds only annotation rows that have a common :loc value with seq_dataset"
   (->> comp_file
@@ -281,8 +273,8 @@
                              (not= minorf+1 "-")
                              (not= minorf+2 "-"))))
        (i/$ [:ref-loc1 :loc :gene+
-             :cov1 :A1 :T1 :G1 :C1
-             :cov2 :A2 :T2 :G2 :C2
+             :depth1 :A1 :T1 :G1 :C1
+             :depth2 :A2 :T2 :G2 :C2
              :majorf+1 :majorf+2 :minorf+1 :minorf+2])))
 
 

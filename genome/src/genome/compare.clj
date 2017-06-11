@@ -21,11 +21,13 @@
   "snp sould be the string of the keyword"
   (->> file
        (i/add-derived-column
-        (keyword (str snp "-fq"))
+        (keyword (str snp "fq"))
         [(keyword snp) :depth]
         #(if (= %2 0.0)
            0.0
            (/ %1 %2)))))
+
+
 
 (defn add-snp-precent [file]
   (->> file
@@ -39,39 +41,25 @@
 ;DEFINE NEW COLUMN NAME
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sample1 {:T :T1 :T-fq :Tfq1
-              :C :C1 :C-fq :Cfq1
-              :A :A1 :A-fq :Afq1
-              :G :G1 :G-fq :Gfq1 :minfr   :minfr1
-              :depth   :depth1   :pi      :pi1
-              :ref-loc :ref-loc1 :maj_un+ :maj_un+1
-              :maj+    :maj+1    :min+    :min+1
-              :maj_aa+ :maj_aa+1 :min_aa+ :min_aa+1
-              :maj-    :maj-1    :min-    :min-1
-              :maj_aa- :maj_aa-1 :min_aa- :min_aa-1 
-              :majorf+ :majorf+1 :minorf+ :minorf+1
-              :majorf- :majorf-1 :minorf- :minorf-1})
-
-(def sample2 {:T :T2 :Tfq :Tfq2
-              :C :C2 :C-fq :Cfq2
-              :A :A2 :A-fq :Afq2
-              :G :G2 :G-fq :Gfq2 :minfr   :minfr2
-              :depth   :depth2   :pi      :pi2
-              :ref-loc :ref-loc2 :maj_un+ :maj_un+2
-              :maj+    :maj+2    :min+    :min+2
-              :maj_aa+ :maj_aa+2 :min_aa+ :min_aa+2
-              :maj-    :maj-2    :min-    :min-2
-              :maj_aa- :maj_aa-2 :min_aa- :min_aa-2 
-              :majorf+ :majorf+2 :minorf+ :minorf+2
-              :majorf- :majorf-2 :minorf- :minorf-2})
+(defn  col-rename [file ser_num]
+  "This one is for adding a serial number at the end of a col name"
+  (let [dont-change #{ :loc :merlin}
+        old-cols (apply vector (remove #(contains? dont-change %)
+                                       (i/col-names file)))
+        new-cols (->> old-cols
+                      (map #(keyword (subs (str % ser_num) 1)))
+                      (apply vector))]
+    (->> new-cols
+         (interleave old-cols)
+         (apply assoc {}))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn add-row [file]
+  "adds nil as first row because of the join bug"
   (let [ it_be (i/col-names file)]
     (i/conj-rows
      (i/dataset
@@ -79,98 +67,47 @@
       [(vec (take (count it_be) (repeat nil)))])
      file)))
 
-
-(defn unite [file1 file2]
-  "Adds only file2 rows that have a common :loc value with file1"
-  (let [set1   (add-row file1)
-        set2   (add-row file2)
-        coled1 (i/rename-cols sample1 set1)
-        coled2 (i/rename-cols sample2 set2)]
-    (i/$where {:A2 {:$ne nil}}
-              (i/$join [:loc :loc] coled2 coled1))))
-(def p-unite (memoize unite))
-
-
-(defn create-dataset [file1 file2]
+(defn merge-prep [file]
   "creates a dataset which contains all sites with allele frequency"
-  (let [snp1   (add-snp-precent file1)
-        snp2   (add-snp-precent file2)]
-    (->>(p-unite snp1 snp2)
-        (i/$ [:merlin   :loc      :gene+    :gene-
-              :CDS+     :CDS-     :exon+    :exon-
-              :ref-loc1 :depth1   :pi1      :maj_un+1        
-              :A1       :Afq1     :T1       :Tfq1
-              :G1       :Gfq1     :C1       :Cfq1    :minfr1
-              :maj+1    :min+1    :maj_aa+1 :min_aa+1 
-              :maj-1    :min-1    :maj_aa-1 :min_aa-1
-              :majorf+1 :minorf+1 :majorf-1 :minorf-1
-              :ref-loc2 :depth2   :pi2      :maj_un+2 
-              :A2       :Afq2     :T2       :Tfq2
-              :G2       :Gfq2     :C2       :Cfq2    :minfr2 
-              :maj+2    :min+2    :maj_aa+2 :min_aa+2
-              :maj-2    :min-2    :maj_aa-2 :min_aa-2
-              :majorf+2 :minorf+2 :majorf-2 :minorf-2]))))
+  (add-row (add-snp-precent file))))
 
+(defn unite
+  ([file1 file2]
+   "Adds only file2 rows that have a common :loc value with file1"
+   (let [set1   (merge-prep file1)
+         set2   (merge-prep file2)
+         coled1 (i/rename-cols (col-rename set1 1) set1)
+         coled2 (i/rename-cols (col-rename set2 2) set2)]
+     (->> coled1
+          (i/$join [:loc :loc] coled2)
+          (i/$where {:A2 {:$ne nil}}))))
+  ([file1 file2 file3]
+   (let [set1   (merge-prep file1)
+         set2   (merge-prep file2)
+         set3   (merge-prep file3)
+         coled1 (i/rename-cols (col-rename set1 1) set1)
+         coled2 (i/rename-cols (col-rename set2 2) set2)
+         coled3 (i/rename-cols (col-rename set3 3) set3)]
+     (->> coled1
+          (i/$join [:loc :loc] coled2)
+          (i/$join [:loc :loc] coled3)
+          (i/$where {:A2 {:$ne nil}}))))
+  ([file1 file2 file3 file4]
+   (let [set1   (merge-prep file1)
+         set2   (merge-prep file2)
+         set3   (merge-prep file3)
+         set4   (merge-prep file4)
+         coled1 (i/rename-cols (col-rename set1 1) set1)
+         coled2 (i/rename-cols (col-rename set2 2) set2)
+         coled3 (i/rename-cols (col-rename set3 3) set3)
+         coled4 (i/rename-cols (col-rename set4 4) set4)]
+     (->> coled1
+          (i/$join [:loc :loc] coled2)
+          (i/$join [:loc :loc] coled3)
+          (i/$join [:loc :loc] coled4)
+          (i/$where {:A2 {:$ne nil}})))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;FINAL FUNCTIONS FOR VSRIANTS ALLELE CHANGE AND DIV CHANGE
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn nuc-variants [file1 file2]
-  "Shows alleles from two samples at same site"
-  (->>(create-dataset file1 file2)
-      (i/$ [:merlin   :loc  :gene+ :gene-
-            :CDS+     :CDS- :exon+ :exon-
-            :ref-loc1 :depth1 :pi1 :minfr1
-            :A1   :T1 :G1   :C1 
-            :ref-loc2 :depth2 :pi2 :minfr2
-            :A2   :T2 :G2   :C2 
-            :maj+1    :maj+2])))
-
-(defn aa-variants [file1 file2]
-  "Shows alleles from two samples at same site"
-  (->>(create-dataset file1 file2)
-      (i/$ [:merlin   :loc      :gene+    :gene-
-            :CDS+     :CDS-     :exon+    :exon-
-            :ref-loc1 :depth1   :minfr1
-            :A1       :T1       :G1       :C1 
-            :ref-loc2 :depth2   :minfr2
-            :A2       :T2       :G2       :C2 
-            :pi1      :pi2      :maj_un+1 :maj_un+2
-            :maj+1    :maj+2    :min+1    :min+2
-            :maj_aa+1 :maj_aa+2 :min_aa+1 :min_aa+2
-            :maj-1    :maj-2    :min-1    :min-2
-            :maj_aa-1 :maj_aa-2 :min_aa-1 :min_aa-2
-            :majorf+1 :majorf+2 :minorf+1 :minorf+2
-            :majorf-1 :majorf-2 :minorf-1 :minorf-2])))
-
-(defn allele-change [file1 file2]
-  "compares all alleles frequencies from two samples at  same site"
-  (->>(create-dataset file1 file2)
-      (i/$ [:loc  :gene+    :gene-
-            :CDS+     :CDS-     
-            :cov1 :Afq1 :Tfq1 :Gfq1 :Cfq1
-            :cov2 :Afq2 :Tfq2 :Gfq2 :Cfq2])
-      ( #(i/conj-rows (i/$ [:depth1 :depth2 :ref-loc :Afq1 :Afq2]  %)
-                      (i/$ [:depth1 :depth2 :ref-loc :Tfq1 :Tfq2]  %)
-                      (i/$ [:depth1 :depth2 :ref-loc :Cfq1 :Cfq2]  %)
-                      (i/$ [:depth1 :depth2 :ref-loc :Gfq1 :Gfq2]  %) ))
-      (i/rename-cols {:Afq1 :fq1 :Afq2 :fq2})
-      (i/$where (i/$fn [fq1 fq2] (or (> fq1 0.0) (> fq2 0.0)))) 
-      (i/$where (i/$fn [fq1 fq2] (or (< fq1 1.0) (< fq2 1.0))))                    
-      (i/$order :ref-loc1 :asc)))
-
-(defn diversity-change [file1 file2]
-  "compares diversity change between two sites"
-  (->>(create-dataset file1 file2)
-      (i/$ [:loc :ref-loc1 :depth1 :pi1 :minfr1 :depth2 :pi2 :minfr2])
-      (i/add-derived-column
-       :gap
-       [:pi2 :pi1]
-       #(- %1 %2))))
-
-
-
+(def p-unite (memoize unite))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CALCULATING MUTATION RATE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
