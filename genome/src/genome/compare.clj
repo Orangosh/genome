@@ -69,7 +69,7 @@
 
 (defn merge-prep [file]
   "creates a dataset which contains all sites with allele frequency"
-  (add-row (add-snp-precent file))))
+  (add-row (add-snp-precent file)))
 
 (defn unite
   ([file1 file2]

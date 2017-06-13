@@ -261,22 +261,30 @@
 ;COMPARISON ANALYSES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn clean-proc [comp_file]
-  "Adds only annotation rows that have a common :loc value with seq_dataset"
-  (->> comp_file
-       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
-       (i/$where (i/$fn [majorf+1 majorf+2 minorf+1 minorf+2]
-                        (and (not= majorf+2 minorf+2)
-                             (=    minorf+2 majorf+1)
-                             (not= majorf+1 "-")
-                             (not= majorf+2 "-")
-                             (not= minorf+1 "-")
-                             (not= minorf+2 "-"))))
-       (i/$ [:ref-loc1 :loc :gene+
-             :depth1 :A1 :T1 :G1 :C1
-             :depth2 :A2 :T2 :G2 :C2
-             :majorf+1 :majorf+2 :minorf+1 :minorf+2])))
-
+(defn filtre [file] 
+  "A prototype for filther removes nil, 
+gets pos nonsyn, with min allele and depth"
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
+                         depth3 minfr3 depth4 minfr4]
+                        (and (not= nil depth1) (not= nil depth2)
+                             (not= nil depth3) (not= nil depth4))))
+       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2
+                         majorf+3 minorf+3 majorf+4 minorf+4]
+                        (and (not= majorf+1 minorf+1)
+                             (not= majorf+2 minorf+2)
+                             (not= majorf+3 minorf+3)
+                             (not= majorf+4 minorf+4))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
+                        (and (> minfr1 0.003) (> minfr2 0.003)
+                             (> minfr3 0.003) (> minfr4 0.003))))
+       (i/$where (i/$fn [depth1 depth2 depth3 depth4]
+                        (and (> depth1 20.0 ) (> depth2 20.0 )
+                             (> depth3 20.0 ) (> depth4 20.0 ))))
+       (i/$where (i/$fn [CDS+ CDS-]
+                        (or  (not= CDS+ "-" ) )))
+       (i/$ [:ref-loc1 :gene+ :gene- :CDS+ :CDS-
+             :minfr1 :minfr2 :minfr3 :minfr4])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PREPARING DATA FOR d3/CIRCOS
