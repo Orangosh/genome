@@ -413,3 +413,40 @@ gets pos nonsyn, with min allele and depth"
 (defn map-circos-sets [circosing]
   (map #(circos %) circosing))
     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;PRINCIPLE COMPONENET ANALYSIS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn PCA-filter [file] 
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
+                         depth3 minfr3 depth4 minfr4]
+                        (and (not= nil depth1) (not= nil depth2)
+                             (not= nil depth3) (not= nil depth4)
+                             (not= nil minfr1) (not= nil minfr2)
+                             (not= nil minfr3) (not= nil minfr4))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
+                        (and (> minfr1 0.003) (> minfr2 0.003)
+                             (> minfr3 0.003) (> minfr4 0.003))))
+       (i/$where (i/$fn [depth1 depth2 depth3 depth4]
+                        (and (> depth1 20.0 ) (> depth2 20.0 )
+                             (> depth3 20.0 ) (> depth4 20.0 ))))
+       (i/$ [:loc :minfr1 :minfr2 :minfr3 :minfr4])))
+
+(defn SNPCA [file]
+  (let [data (->> file
+                  (i/to-matrix))
+        components (st/principal-components data)
+        pc1 (i/$ 0 (:rotation components))
+        pc2 (i/$ 1 (:rotation components))
+        xs (i/mmult data pc1)
+        ys (i/mmult data pc2)]
+    (-> (c/scatter-plot (i/$ (range 50) 0 xs)
+                        (i/$ (range 50) 0 ys)
+                        :x-label "Principle Component 1"
+                        :y-label "Principle Component 2")
+        (c/add-points (i/$ (range 50 100) 0 xs)
+                      (i/$ (range 50 100) 0 ys))
+        (c/add-points (i/$ [:not (range 100)] 0 xs)
+                      (i/$ [:not (range 100)] 0 ys))
+        (i/view))))
