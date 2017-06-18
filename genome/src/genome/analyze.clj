@@ -416,36 +416,70 @@ gets pos nonsyn, with min allele and depth"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;PRINCIPLE COMPONENET ANALYSIS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn PCA-filter [file] 
   (->> file
-       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
-                         depth3 minfr3 depth4 minfr4]
-                        (and (not= nil depth1) (not= nil depth2)
-                             (not= nil depth3) (not= nil depth4)
-                             (not= nil minfr1) (not= nil minfr2)
-                             (not= nil minfr3) (not= nil minfr4))))
-       (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
-                        (or (> minfr1 0.0035) (> minfr2 0.0035)
-                             (> minfr3 0.0035) (> minfr4 0.0035))))
-       (i/$where (i/$fn [depth1 depth2 depth3 depth4]
+       (i/$where (i/$fn [depth1  depth2  depth3  depth4
+                         depth5  depth6  depth7  depth8
+                         depth9  depth10 depth11 depth12
+                         depth13 depth14 depth15 depth16]
+                        (and (not= nil depth1)  (not= nil depth2)
+                             (not= nil depth3)  (not= nil depth4)
+                             (not= nil depth5)  (not= nil depth6)
+                             (not= nil depth7)  (not= nil depth8)
+                             (not= nil depth9)  (not= nil depth10)
+                             (not= nil depth11) (not= nil depth12)
+                             (not= nil depth13) (not= nil depth14)
+                             (not= nil depth15) (not= nil depth16))))
+       (i/$where (i/$fn [minfr1  minfr2  minfr3  minfr4
+                         minfr5  minfr6  minfr7  minfr8
+                         minfr9  minfr10 minfr11 minfr12
+                         minfr13 minfr14 minfr15 minfr16]
+                        (or  (> minfr1 0.0035)  (> minfr2 0.0035)
+                             (> minfr3 0.0035)  (> minfr4 0.0035)
+                             (> minfr5 0.0035)  (> minfr6 0.0035)
+                             (> minfr7 0.0035)  (> minfr8 0.0035)
+                             (> minfr9 0.0035)  (> minfr10 0.0035)
+                             (> minfr11 0.0035) (> minfr12 0.0035)
+                             (> minfr13 0.0035) (> minfr14 0.0035)
+                             (> minfr15 0.0035) (> minfr16 0.0035))))
+       (i/$where (i/$fn [depth1 depth2 depth3 depth4 depth5 depth6 depth7 depth8]
                         (and (> depth1 20.0 ) (> depth2 20.0 )
-                             (> depth3 20.0 ) (> depth4 20.0 ))))
-       (i/$ [:minfr1 :minfr2 :minfr3 :minfr4 :loc])
-       (i/to-matrix)))
+                             (> depth3 20.0 ) (> depth4 20.0 )
+                             (> depth5 20.0 ) (> depth6 20.0 )
+                             (> depth7 20.0 ) (> depth8 20.0 )))) 
+       (i/$ (range 23000 24000) [:minfr1  :minfr2  :minfr3  :minfr4
+                                 :minfr5  :minfr6  :minfr7  :minfr8
+                                 :minfr9  :minfr10 :minfr11 :minfr12
+                                 :minfr13 :minfr14 :minfr15 :minfr16])
+       (i/to-matrix) (i/trans)))
 
-(defn SNPCA [file]
+(defn SNPxs [file]
   (let [data       (PCA-filter file)
         components (st/principal-components data)
-        pc1        (i/$ 0 (:rotation components))
-        pc2        (i/$ 1 (:rotation components))
-        xs         (i/mmult data pc1)
-        ys         (i/mmult data pc2)]
-    (-> (c/scatter-plot (i/$ (range 50) 1 xs)
-                        (i/$ (range 50) 1 ys)
-                        :x-label "Principle Component 1"
-                        :y-label "Principle Component 2")
-        (c/add-points (i/$  0 xs)
-                      (i/$  0 ys))
-        (c/add-points (i/$ [:not (range 100)] 0 xs)
-                      (i/$ [:not (range 100)] 0 ys))
-        (i/view))))
+        pc1        (i/$ 0 (:rotation components))]
+    (i/mmult data pc1)))
+
+(defn SNPys [file]
+  (let [data       (PCA-filter file)
+        components (st/principal-components data)
+        pc2        (i/$ 1 (:rotation components))]
+    (i/mmult data pc2)))
+
+(defn SNPCA [xs ys]
+  (-> (c/scatter-plot (i/$ (range 0 9) 0 xs)
+                      (i/$ (range 0 9) 0 ys)
+                      :x-label "Principle Component 1"
+                      :y-label "Principle Component 2")
+      (c/add-points (i/$  (range 9 10) 0 xs)
+                    (i/$  (range 9 10) 0 ys))
+      (c/add-points (i/$  (range 10 11) 0 xs)
+                    (i/$  (range 10 11) 0 ys))
+      (c/add-points (i/$  (range 11 13) 0 xs)
+                    (i/$  (range 11 13) 0 ys))
+      (c/add-points (i/$  (range 13 14) 0 xs)
+                    (i/$  (range 13 14) 0 ys))
+      (i/view)))
+
+
+
