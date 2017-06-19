@@ -451,20 +451,26 @@ gets pos nonsyn, with min allele and depth"
        (i/$ (range 23000 24000) [:minfr1  :minfr2  :minfr3  :minfr4
                                  :minfr5  :minfr6  :minfr7  :minfr8
                                  :minfr9  :minfr10 :minfr11 :minfr12
-                                 :minfr13 :minfr14 :minfr15 :minfr16])
-       (i/to-matrix) (i/trans)))
+                                 :minfr13 :minfr14 :minfr15 :minfr16])))
 
 (defn SNPxs [file]
-  (let [data       (PCA-filter file)
+  (let [data       (->> file
+                        PCA-filter 
+                        i/to-matrix
+                        i/transpose)
         components (st/principal-components data)
         pc1        (i/$ 0 (:rotation components))]
     (i/mmult data pc1)))
 
 (defn SNPys [file]
-  (let [data       (PCA-filter file)
+  (let [data       (->> file
+                        PCA-filter
+                        i/to-matrix
+                        i/transpose)
         components (st/principal-components data)
         pc2        (i/$ 1 (:rotation components))]
     (i/mmult data pc2)))
+
 
 (defn SNPCA [xs ys]
   (-> (c/scatter-plot (i/$ (range 0 9) 0 xs)
@@ -481,5 +487,24 @@ gets pos nonsyn, with min allele and depth"
                     (i/$  (range 13 14) 0 ys))
       (i/view)))
 
-
+ (defn SNP-SVD [file]
+   (let [svd (->> file
+                  PCA-filter
+                  i/to-matrix
+                  i/trans
+                  i/decomp-svd)
+         dims 2
+         u (i/$
+            (range dims) (:U svd))
+         s (i/diag (take dims
+                         (:S svd)))
+         v (i/trans (i/$ (range dims) (:V svd)))
+         projection (i/mmult u s v)]
+     (-> (c/scatter-plot (i/$ (range 0 9) 0 projection)
+                         (i/$ (range 0 9) 1 projection)
+                         :x-label "Dimension 1"
+                         :y-label "Dimension 2")
+         (c/add-points (i/$ (range 9 16) 0 projection)
+                       (i/$ (range 1 16) 1 projection))
+         (i/view))))
 
