@@ -13,12 +13,12 @@
 (defn pairs [file]
   "parses through the ID line of gff3 file and creates a map "
   (->> file
-         (re-seq  #"[^;]*")
-         (map #(re-seq #"[^=]*" %))
-         (map (fn [x] (filter #(not= "" %) x)))
-         (filter #(= 2 (count %)))
-         flatten
-         (apply hash-map)))
+       (re-seq  #"[^;]*")
+       (map #(re-seq #"[^=]*" %))
+       (map (fn [x] (filter #(not= "" %) x)))
+       (filter #(= 2 (count %)))
+       flatten
+       (apply hash-map)))
 
 (defn only-existing [id file]
   "puts a value if there is one if not a -"
@@ -59,7 +59,7 @@
                  (map #(str % "-"))
                  (map keyword)
                  vec)]
-    (concat pos neg [:loc :gene+ :gene-])))
+    (concat pos neg [:loc :gfwd+ :gbwd+ :gfwd- :gbwd-])))
 
 (defn empty-ref-db [file attribute size]
   "creates an empty ref dataset with col-names"
@@ -112,14 +112,21 @@
         new-list (rest list)]
     (if (< 1 (count list))
       (recur new-list posneg new-file)
-      file)))
+      new-file)))
 
-(defn creat-one-gene [list nontype file]
+(defn creat-one-gene-fwd [list nontype file]
   (let [new-file (add-annotations-gene (first list) nontype file)
         new-list (rest list)]
     (if (< 1 (count list))
       (recur new-list nontype new-file)
-      file)))
+      new-file)))
+
+(defn creat-one-gene-bwd [list nontype file]
+  (let [new-file (add-annotations-gene (last list) nontype file)
+        new-list (drop-last list)]
+    (if (< 1 (count list))
+      (recur new-list nontype new-file)
+      new-file)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,10 +149,12 @@
         rescrubed- (i/$where {:strand {:$eq "-"}} rescrubed)]
     
     (->> (empty-ref-db scrubed :type  (apply max (i/$ :pt2 scrubed)))
-         (creat-one      (get-list scrubed+   :type)  "+")
-         (creat-one      (get-list scrubed-   :type)  "-")
-         (creat-one-gene (get-list rescrubed+ :gene) :gene+)
-         (creat-one-gene (get-list rescrubed- :gene) :gene-))))
+         (creat-one          (get-list scrubed+   :type)    "+")
+         (creat-one          (get-list scrubed-   :type)    "-")
+         (creat-one-gene-fwd (get-list rescrubed+ :gene) :gfwd+)
+         (creat-one-gene-bwd (get-list rescrubed+ :gene) :gbwd+)
+         (creat-one-gene-fwd (get-list rescrubed- :gene) :gfwd-)
+         (creat-one-gene-bwd (get-list rescrubed- :gene) :gbwd-))))
 
 (defn gff3>csv [file_in file_out]
   "save annotation as csv file"
@@ -160,10 +169,14 @@
   "creates an annotation"
   (let [ann_cols (ga/gff3>dataset input_file)]
     (->> (i/$ (vec (sort (distinct  (i/col-names ann_cols)))) ann_cols)
-         (i/$ [:loc :gene+ :gene- :CDS+ :CDS- :exon- :exon+]))))
+         (i/$ [:loc   :gfwd+ :gbwd+ :gfwd- :gbwd-
+               :CDS+  :CDS-  :exon- :exon+]))))
   (def m-get-annotation (memoize get-annotation))
 
 (defn annotate [gff3 incfile]
   "incorporates annotation into the inc file"
   (let [annotation (m-get-annotation gff3)]
     (i/$join [:loc :ref-loc] annotation incfile)))
+
+
+

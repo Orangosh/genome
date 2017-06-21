@@ -5,8 +5,7 @@
            [incanter.io      :as ii ]
            [incanter.stats   :as st ]
            [incanter.charts  :as c  ]
-           [clojure.data.csv :as csv]
-           [genome.analyze   :as ana]))
+           [clojure.data.csv :as csv]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE FILE LOCATIONS
@@ -15,16 +14,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
 
-;;(def home                  "/home/yosh/datafiles/")
-;;(def input_file  (str home "genes/merlin.gff3"   ))
-;;(def output_file (str home "genes/merlin.inc"    ))
+(def home                  "/home/yosh/datafiles/")
+(def input_file  (str home "genes/merlin.gff3"   ))
+(def output_file (str home "genes/merlin.inc"    ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
 
-(def home                  "/mnt/data/datafiles/"  )
-(def input_file  (str home "concensus/merlin.gff3"))
-(def output_file (str home "concensus/refset.inc" ))
+;;(def home                  "/mnt/data/datafiles/"  )
+;;(def input_file  (str home "concensus/merlin.gff3"))
+;;(def output_file (str home "concensus/refset.inc" ))
 
 
  
@@ -80,81 +79,60 @@
 (def S79-S1a (m-get-set L79-S1a 0))
 (def S79-S1b (m-get-set L79-S1b 0))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET TO THE POINT
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-merlin [col gene file]
-  "takes a consensus for a gene in "
+(defn pairs [type col]
+  "parses through the ID line of gff3, creates a map returns a value"
+  (->> col
+       (re-seq  #"[^;]*")
+       (map #(re-seq #"[^=]*" %))
+       (map (fn [x] (filter #(not= "" %) x)))
+       (filter #(= 2 (count %)))
+       flatten
+       (apply hash-map)
+       (#(% type))))
+
+(defn gene-list [file]
+  "/home/yosh/datafiles/genes/merlin.gff3"
+  (->> (ii/read-dataset file :delim \tab)
+       (i/rename-cols {:col2 :type :col3 :pt1 :col4 :pt2
+                       :col6 :strand   :col8 :attributes})
+       (i/$where {:type {:eq "gene"}})
+       (i/add-derived-column
+        :gene
+        [:attributes]
+        #(pairs "gene" %))(i/$  [:gene :pt1 :pt2])
+       (i/to-vect)))
+
+(defn get-gene [[gene pt1 pt2] sample_name col file]
   (let [sequence (->> file
-                      (i/$where {col {:$eq gene}})
-                      (i/$where {:merlin {:$ne "-"}})
-                      (i/$ :merlin)
+                      (i/$where (i/$fn [ref-loc] (and (<= pt1 ref-loc) (>= pt2 ref-loc))))
+                      (i/$ col)(remove #(= "-" %)) 
                       (apply str)
                       (partition-all 80)
-                      (map #(apply str %)))]
-    (spit (str "/mnt/data/datafiles/phylo/input/" gene ".fas")
-          (str ">merlin\n" (apply str (map #(str % "\n") sequence)))
-          :append true)))
-
-
-
-
-(defn get-consensus [col gene sample_name file]
-  "takes a consensus for a gene in "
-  (let [sequence (->> file
-                      (i/$where {col {:$eq gene}})
-                      (i/$ :maj+)
-                      (apply str)
-                      (partition-all 80)
-                      (map #(apply str %)))
-        ;;       (str ">" sample_name "|gene-" gene "|strand-" )]
+                      (map #(apply str %)) )
         name     (str ">" sample_name)]
-    (spit (str "/mnt/data/datafiles/phylo/input/" gene ".fas")
+    (spit (str "/home/yosh/datafiles/trees/" gene ".fas")
           (str name "\n" (apply str (map #(str % "\n") sequence)))
           :append true)))
 
-
-(defn get-gene-list [col file]
-  (->> file
-       (i/$where {col {:$ne "-"}})
-       (i/$ col)
-       distinct))
-
-(defn map-merlin+ [file]
-  (map #(get-merlin :gene+ % file)
-       (get-gene-list :gene+ file)))
-
-(defn map-merlin- [file]
-  (map #(get-merlin :gene- % file)
-       (get-gene-list :gene- file)))
-
-
-(defn map-gene+ [file]
+(defn map-gene [gff [col file]]
   (let [sample_name (first (i/$ :r_seq file))]
-    (map #(get-consensus :gene+ % sample_name file)
-         (get-gene-list :gene+ file))))
+    (map #(get-gene % sample_name col file)
+         (gene-list gff))))
 
-(defn map-gene- [file]
-  (let [sample_name (first (i/$ :r_seq file))]
-    (map #(get-consensus :gene- % sample_name file)
-         (get-gene-list :gene- file))))
- 
-(defn print-fas+ []
-  (map #(map-gene+ %) [S05-M  S05-Pa
-                      S19-Pb S19-Pc S19-Pd S19-S1a
-                      S20-Pa S20-Pb S20-Pc S20-S1  S20-S1a
-                      S79-Pa S79-Pb S79-M  S79-S1a S79-S1b]))
+(defn map-gene [gff [col file]]
+  (let [ sample_name (if (= col :merlin) "merlin" (first (i/$ :r_seq file)))]
+    (map #(get-gene % sample_name col file)
+         (gene-list gff))))
 
-(defn print-fas- []
-  (map #(map-gene- %) [S05-M  S05-Pa
-                      S19-Pb S19-Pc S19-Pd S19-S1a
-                      S20-Pa S20-Pb S20-Pc S20-S1  S20-S1a
-                      S79-Pa S79-Pb S79-M  S79-S1a S79-S1b]))
-
-
-(map-merlin+ S19-Pb)
-(map-merlin- S19-Pb)
-(print-fas+)
-(print-fas-)
-
+(defn print-fas []
+  (map #(map-gene "/home/yosh/datafiles/genes/merlin.gff3" %)
+       [[:merlin S19-Pb]
+        [:maj+ S05-M ]  [:maj+ S05-Pa ] [:maj+ S19-Pb ] [:maj+ S19-Pc ]
+        [:maj+ S19-Pd]  [:maj+ S19-S1a] [:maj+ S20-Pa ] [:maj+ S20-Pb ]
+        [:maj+ S20-Pc]  [:maj+ S20-S1 ] [:maj+ S20-S1a] [:maj+ S79-Pa ]
+        [:maj+ S79-Pb]  [:maj+ S79-M  ] [:maj+ S79-S1a] [:maj+ S79-S1b]]))

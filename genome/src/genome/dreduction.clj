@@ -59,7 +59,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-set [file cov]
-  "open an csv.inc file"
+  "open a csv.inc file"
   (->> (ii/read-dataset file :header true)
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
@@ -252,7 +252,7 @@
          (c/add-points (i/$ (range 9 16) 0 projection)
                        (i/$ (range 9 16) 1 projection))
          (i/view))))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn SNPxs [file]
   (let [data       (->> file
