@@ -104,7 +104,8 @@
        (i/add-derived-column
         :gene
         [:attributes]
-        #(pairs "gene" %))(i/$  [:gene :pt1 :pt2])
+        #(pairs "gene" %))
+       (i/$  [:gene :pt1 :pt2])
        (i/to-vect)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -142,9 +143,10 @@
         seq-col  (->> fasta
                    (map second)
                    (map #(vec (str/split % #"")))
-                   (apply i/conj-cols))
+                   (apply i/conj-cols)
+                   (i/$where {:col-0 {:$ne "-"}}))
         name-col (->> fasta
-                       (map #(subs (first %) 1))
+                      (map #(keyword (subs (first %) 1)))
                        vec)
         locless  (i/rename-cols
                   (apply assoc {} (interleave (i/col-names seq-col) name-col))
@@ -165,7 +167,7 @@
   (let [gff-list (gene-list gff)
         inc-file (fasta>inc file)]
     (map #(inc>gene gff-list inc-file %)
-         (i/col-names inc-file))))
+         (drop-last (i/col-names inc-file)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
