@@ -142,7 +142,7 @@
   (i/$where (i/$fn [depth minfr]
                    (and (> depth dep)
                         (< minfr mfr)))  
-            (i/$ [:ref-loc  :gene+ :gene- 
+            (i/$ [:ref-loc  :gfwd+ :gfwd- 
                   :CDS+     :CDS-  :ref :loc 
                   :depth :T :A  :C :G   :minfr :pi ] 
                  file)))
@@ -181,7 +181,7 @@
 (defn pi-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
-       (i/$ [:ref-loc :gene+ :CDS+ :loc :pi
+       (i/$ [:ref-loc :gfwd+ :CDS+ :loc :pi
              :depth :maj+ :min+ :maj_aa+ :min_aa+ 
              :T     :A    :C    :G 
              :orf+ :majorf+ :minorf+])
@@ -190,7 +190,7 @@
 (defn nonsyn-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
-       (i/$ [:ref-loc :gene+ :CDS+ :loc 
+       (i/$ [:ref-loc :gfwd+ :CDS+ :loc 
              :depth :maj+ :min+ :maj_aa+ :min_aa+ 
              :T     :A    :C    :G 
              :orf+ :majorf+ :minorf+])
@@ -210,7 +210,7 @@
        (getNextPaint [] Color/blue)))))
 
 (defn get-gene [function col file]
-  "function is any filter/ col is usualy :gene+/-"
+  "function is any filter/ col is usualy :gfwd+/-"
   (let [general (->> file
                      (i/$ col)
                      frequencies
@@ -283,7 +283,7 @@ gets pos nonsyn, with min allele and depth"
                              (> depth3 20.0 ) (> depth4 20.0 ))))
        (i/$where (i/$fn [CDS+ CDS-]
                         (or  (not= CDS+ "-" ) )))
-       (i/$ [:ref-loc1 :gene+ :gene- :CDS+ :CDS-
+       (i/$ [:ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
              :minfr1 :minfr2 :minfr3 :minfr4])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -295,7 +295,7 @@ gets pos nonsyn, with min allele and depth"
 
 (defn get-locations [col postrand? begining? file]
   "gets a set with all begining or end of a positive or netetive column"
-  (let [gene     (if postrand? :gene+ :gene-)
+  (let [gene     (if postrand? :gfwd+ :gfwd-)
         name-vec (->> file
                       (i/$where {col {:$ne "-"}})
                       (i/$ gene)
@@ -326,12 +326,12 @@ gets pos nonsyn, with min allele and depth"
           :end
           ncol)
          (i/rename-cols {:loc :start
-                         :gene+ :genep
-                         :gene- :genen
+                         :gfwd+ :gfwdp
+                         :gfwd- :gfwdn
                          :CDS+  :CDSp
                          :CDS-  :CDSn})
          (i/$ [:r_seq  col   :start :end
-               :genep :genen :CDSp  :CDSn]))))
+               :gfwdp :gfwdn :CDSp  :CDSn]))))
 (def m-get-range-set (memoize get-range-set))
 
 
@@ -351,9 +351,9 @@ gets pos nonsyn, with min allele and depth"
 
 (defn circosing1 []
   (let [ An19-Pb (m-get-set L19-Pb 0)] 
-    [[(m-get-range-set :gene+ true  An19-Pb)
+    [[(m-get-range-set :gfwd+ true  An19-Pb)
       "/home/yosh/Software/git/visual/circos/resources/public/data/genepos.csv"]
-     [(m-get-range-set :gene- false An19-Pb)
+     [(m-get-range-set :gfwd- false An19-Pb)
       "/home/yosh/Software/git/visual/circos/resources/public/data/geneneg.csv"]
      [(m-get-range-set :CDS+  true  An19-Pb)
       "/home/yosh/Software/git/visual/circos/resources/public/data/CDSpos.csv"]

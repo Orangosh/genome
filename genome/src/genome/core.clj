@@ -67,12 +67,13 @@
 
   (def scrubed2 (i/$ [:r_seq
                       :merlin :ref-loc
-                      :gene+ :gene- :CDS+ :CDS- :exon- :exon+
-                      :ref :loc :maj_un+
-                      :cov :cov_un :depth
-                      :maj+ :min+ :maj_aa+ :min_aa+
-                      :maj- :min- :maj_aa- :min_aa-
-                      :T :A :C :G :minfr] min_aa))
+                      :gfwd+ :gfwd-  :gbwd+   :gbwd-
+                      :CDS+  :CDS-   :exon-   :exon+
+                      :ref   :loc    :maj_un+
+                      :cov   :cov_un :depth
+                      :maj+  :min+   :maj_aa+ :min_aa+
+                      :maj-  :min-   :maj_aa- :min_aa-
+                      :T     :A      :C    :G :minfr] min_aa))
   
   (println "Calculating nucleotide diversity")
   (def pied (p/pise p/pi scrubed2))

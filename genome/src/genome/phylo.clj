@@ -81,7 +81,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;GET TO THE POINT
+;GET A TABLE WITH GENE START END FROM gff3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn pairs [type col]
@@ -107,22 +107,71 @@
         #(pairs "gene" %))(i/$  [:gene :pt1 :pt2])
        (i/to-vect)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;PRINT THE GENE INTO FASTA FILE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defn get-gene [[gene pt1 pt2] sample_name col file]
   (let [sequence (->> file
-                      (i/$where (i/$fn [ref-loc] (and (<= pt1 ref-loc) (>= pt2 ref-loc))))
-                      (i/$ col)(remove #(= "-" %)) 
+                      (i/$where (i/$fn [ref-loc]
+                                       (and (<= pt1 ref-loc)
+                                            (>= pt2 ref-loc))))
+                      (i/$ col)
+                      (remove #(= "-" %)) 
                       (apply str)
                       (partition-all 80)
                       (map #(apply str %)) )
         name     (str ">" sample_name)]
-    (spit (str "/home/yosh/datafiles/trees/" gene ".fas")
+    (spit (str "/home/yosh/datafiles/trees/treesfromcon/input/" gene ".fas")
           (str name "\n" (apply str (map #(str % "\n") sequence)))
           :append true)))
 
-(defn map-gene [gff [col file]]
-  (let [sample_name (first (i/$ :r_seq file))]
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn fasta>inc [file]
+  "/home/yosh/datafiles/trees/HCMVfortree.fasta"
+  (let [fasta (with-open [rdr (io/reader
+                   file)]
+                (->>(line-seq rdr)
+                    doall
+                    (partition 2)))
+        seq-col  (->> fasta
+                   (map second)
+                   (map #(vec (str/split % #"")))
+                   (apply i/conj-cols))
+        name-col (->> fasta
+                       (map #(subs (first %) 1))
+                       vec)
+        locless  (i/rename-cols
+                  (apply assoc {} (interleave (i/col-names seq-col) name-col))
+                  seq-col)]
+    (i/add-column :ref-loc (vec (range 1 (inc (i/nrow locless)))) locless)))
+
+
+
+(defn inc>gene [gff-list file col]
+  (let [sample_name  (subs (str col) 1)]
     (map #(get-gene % sample_name col file)
-         (gene-list gff))))
+         gff-list)))
+
+
+(defn gene>print [gff file]
+  "gff3 /home/yosh/datafiles/genes/merlin.gff3"
+  "file /home/yosh/datafiles/trees/HCMVfortree.fasta"
+  (let [gff-list (gene-list gff)
+        inc-file (fasta>inc file)]
+    (map #(inc>gene gff-list inc-file %)
+         (i/col-names inc-file))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn map-gene [gff [col file]]
   (let [ sample_name (if (= col :merlin) "merlin" (first (i/$ :r_seq file)))]
