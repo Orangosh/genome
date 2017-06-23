@@ -18,17 +18,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
-
-;;(def home                  "/home/yosh/datafiles/")
-;;(def input_file  (str home "genes/merlin.gff3"   ))
-;;(def output_file (str home "genes/merlin.inc"    ))
+;;(def home "/home/yosh/datafiles/incanted_files/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
- 
-(def home "/mnt/data/datafiles/incanted_files/"  )
-(def input_file  (str home "concensus/merlin.gff3"))
-(def output_file (str home "concensus/refset.inc" ))
+(def home "/mnt/data/datafiles/incanted_files/")
 
 
 (def L05-Pa  (str home "505-Pa.inc" ))
@@ -85,6 +79,154 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Gneral description
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Gneral descriptive functions
+
+
+(defn cutoff [file]
+  (i/nrow (i/$where (i/$fn [minfr pi]
+                           (and (> minfr 0.0003)
+                                (> pi 0.0))) file)))
+(defn sum-cov [file]
+  (i/sum (i/$ :depth file)))
+
+(defn sum-pi [file]
+  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.0003)) file))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Samples dataset
+
+(defn samples []
+  (->> (i/dataset
+        [:sample  :player   :time-pt]
+        [[S05-Pa  "Primary" 1]
+         [S05-M   "Mother"  1]
+         [S19-Pb  "Primary" 1]
+         [S19-Pc  "Primary" 2]
+         [S19-Pd  "Primary" 3]
+         [S19-S1a "Sibling" 1]
+         [S20-Pa  "Primary" 1]
+         [S20-Pb  "Primary" 2]
+         [S20-Pc  "Primary" 3]
+         [S20-S1a "Sibling" 1]
+         [S20-S1b "Sibling" 2]
+         [S79-Pa  "Primary" 1]
+         [S79-Pb  "Primary" 2]
+         [S79-M   "Mother"  0]
+         [S79-S1a "Sibling" 1]
+         [S79-S1b "Sibling" 2]])
+       (i/add-derived-column
+           :name
+           [:sample]
+           #(subs (first (i/$ :r_seq  %)) 3))
+       (i/add-derived-column
+           :n-seg
+           [:sample]
+           #(/ (double (cutoff %))
+               (i/nrow %)))
+       (i/add-derived-column
+           :mean-cov
+           [:sample]
+           #(/ (sum-cov %)
+               (i/nrow  %)))
+       (i/add-derived-column
+           :nuc-div
+           [:sample]
+           #(/ (sum-pi %)
+               (i/nrow %)))
+       (i/$ [:name :player :time-pt :n-seg :m-cov :m-div :sample])))
+(def p-samples (memoize samples))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Simple visualizations
+
+(defn show-one [sams [column title result]]
+  (i/with-data sams
+    (i/view (c/bar-chart :name column
+                         :title title
+                         :group-by :player
+                         :x-label "Sample name"
+                         :y-label result
+                         :legend true
+                         :vertical false))))
+
+(defn show-box [sams [column title result]]
+  (-> (c/box-plot column
+                  :title title
+                  :x-label "Sample name"
+                  :y-label result
+                  :legend true
+                  :series-label "Primary"
+                  :data (i/$where {:player {:$eq "Primary"}} sams))
+      (c/add-box-plot column
+                      :data (i/$where {:player {:$eq "Mother"}} sams)
+                      :series-label "Mother")
+      (c/add-box-plot column
+                      :data (i/$where {:player {:$eq "Sibling"}} sams)
+                      :series-label "Sibling")
+            (i/view)))
+
+(defn show-common [sams [column title result]]
+  (i/with-data  (i/$rollup :mean column :player sams)
+    (i/view (c/bar-chart :player column
+                         :title title
+                         :x-label "Sample name"
+                         :y-label result
+                         :legend true
+                         :vertical false))))
+
+(defn show-all [fnc]
+  (let [sams (p-samples)]
+    (map #(fnc sams %)
+         [[:mean-cov "Mean coverage"                   "mean coverage"        ]
+          [:nuc-div  "Nucleotide diversity"            "Nucleotide diversity" ] 
+          [:n-seg    "Proportion of segregating sites" "Segregation propotion"]])))
+#_(show-all show-one)
+#_(show-all show-common)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;ALL SAMPLES descriptive ANALYSIS 
+
+(defn run-all [fnc]
+  " a function that accept funcinos returns a valur "
+  (let [run_vec (i/$ :sample (p-samples))]
+    (double (/ (reduce + (map #(fnc %) run_vec))
+               (reduce + (map #(i/nrow %) run_vec))))))
+
+(defn stat-all []
+  (println "mean coverage for all:           " (run-all sum-cov))
+  (println "Nucleotide diversity:            " (run-all sum-pi ))
+  (println "Segregating Sites per nucleotid: " (run-all cutoff)))
+#_ (stat-all)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;SINGLE SAMPLE descriptive ANALYSIS
+
+(defn summary-sfs [file]
+  (let [synonymous (da/get-synonymous file)
+        syn-sfs    (p/bin-sfs 10 synonymous)
+        mean_cov   (/ (sum-cov file)      (i/nrow file))
+        nuc_div    (/ (sum-pi file)       (i/nrow file))
+        snp>nucs   (double (/ (cutoff file)       (i/nrow file)))]
+    (println "\nSummary statistics for" (first (i/$ :r_seq file))":")
+    (println "mean coverage:                    " mean_cov)
+    (println "Nucleotide diversity:             " nuc_div)
+    (println "Segregating Sites per nucleotid:  " snp>nucs)
+    (println "Synonymous site frequency spectra:")
+    (println (map first  syn-sfs))
+    (println (map second syn-sfs))))
+
+(defn stat-sample [fnc]
+  (let [run_vec (i/$ :sample (p-samples))]
+    (map #(fnc %) run_vec)))
+#_(stat-sample summary-sfs)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET WINDOWED SET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -113,68 +255,15 @@
   (def W79-S1b (win-100 (m-get-set L79-S1b 20))))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Gneral descriptive functions
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn cutoff [file]
-  (i/nrow (i/$where (i/$fn [minfr pi]
-                           (and (> minfr 0.0003)
-                                (> pi 0.0))) file)))
-(defn sum-cov [file]
-  (i/sum (i/$ :depth file)))
 
-(defn sum-pi [file]
-  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.0003)) file))))
+
+
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ALL SAMPLES ANALYSIS- DESCRIPTIVE STATISTICS  + SFS 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn run-all [fnc]
-  " a function that accept funcinos returns a valur "
-  (let [run_vec [S05-M  S05-Pa S19-Pb  S19-Pc
-                S19-Pd S19-S1a S20-Pa  S20-Pb
-                S20-Pc S20-S1a S20-S1b S79-Pa
-                S79-Pb S79-M   S79-S1a S79-S1b]]
-    (double (/ (reduce + (map #(fnc %) run_vec))
-               (reduce + (map #(i/nrow %) run_vec))))))
-
-(defn stat-all []
-  (println "mean coverage for all:           " (run-all sum-cov))
-  (println "Nucleotide diversity:            " (run-all sum-pi ))
-  (println "Segregating Sites per nucleotid: " (run-all cutoff)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;SINGLE SAMPLE ANALYSIS- DESCRIPTIVE STATISTICS  + SFS 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn summary-sfs [file]
-  (let [synonymous (da/get-synonymous file)
-        syn-sfs    (p/bin-sfs 10 synonymous)
-        mean_cov   (/ (sum-cov file)      (i/nrow file))
-        nuc_div    (/ (sum-pi file)       (i/nrow file))
-        snp>nucs   (double (/ (cutoff file)       (i/nrow file)))]
-    (println "\nSummary statistics for" (first (i/$ :r_seq file))":")
-    (println "mean coverage:                    " mean_cov)
-    (println "Nucleotide diversity:             " nuc_div)
-    (println "Segregating Sites per nucleotid:  " snp>nucs)
-    (println "Synonymous site frequency spectra:")
-    (println (map first  syn-sfs))
-    (println (map second syn-sfs))))
- 
-(defn stat-sample [fnc]
-  (let [run_vec [S05-M  S05-Pa  S19-Pb S19-Pc
-                S19-Pd S19-S1a S20-Pa S20-Pb
-                S20-Pc S20-S1a S20-S1b S79-Pa
-                S79-Pb S79-M   S79-S1a S79-S1b]]
-    (map #(fnc %) run_vec)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;SINGLE SAMPLE ANALYSIS- GET COMMON FEATURES
+;Non descriptive single sample
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -224,11 +313,11 @@
 (defn pi-chart [file]
   (->> file
        (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
-       (i/$ [:ref-loc :gfwd+ :CDS+ :loc :pi
+       (i/$ [:ref-loc :gfwd+ :gbwd+ :CDS+ :loc :pi
              :depth :maj+ :min+ :maj_aa+ :min_aa+ 
              :T     :A    :C    :G 
              :orf+ :majorf+ :minorf+])
-       (i/$where (i/$fn [pi_pois] (= pi_pois 0.0)))))
+       (i/$where (i/$fn [pi] (= pi 0.0)))))
 
 (defn nonsyn-chart [file]
   (->> file
