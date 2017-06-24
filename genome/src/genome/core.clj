@@ -67,7 +67,7 @@
 
   (def scrubed2 (i/$ [:r_seq
                       :merlin :ref-loc
-                      :gfwd+ :gfwd-  :gbwd+   :gbwd-
+                      :gfwd+ :gbwd+  :gfwd-   :gbwd-
                       :CDS+  :CDS-   :exon-   :exon+
                       :ref   :loc    :maj_un+
                       :cov   :cov_un :depth

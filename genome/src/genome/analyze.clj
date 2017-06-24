@@ -393,7 +393,14 @@
 ;COMPARISON ANALYSES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn filtre [file] 
+(defn get-united []
+  (def a5b19a20          (gc/p-unite S05-Pa S19-Pb  S20-Pa          ))
+  (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
+  (def a5b19a20S1b20     (gc/p-unite S05-Pa S19-Pb  S20-Pa  S20-S1b ))
+  (def a5S1a19S1a20S1b20 (gc/p-unite S05-Pa S19-S1a S20-S1a S20-S1b ))
+  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b)))
+
+(defn filtre4 [file] 
   "A prototype for filther removes nil, 
 gets pos nonsyn, with min allele and depth"
   (->> file
@@ -402,11 +409,17 @@ gets pos nonsyn, with min allele and depth"
                         (and (not= nil depth1) (not= nil depth2)
                              (not= nil depth3) (not= nil depth4))))
        (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2
-                         majorf+3 minorf+3 majorf+4 minorf+4]
-                        (and (not= majorf+1 minorf+1)
-                             (not= majorf+2 minorf+2)
-                             (not= majorf+3 minorf+3)
-                             (not= majorf+4 minorf+4))))
+                         majorf+3 minorf+3 majorf+4 minorf+4
+                         majorf-1 minorf-1 majorf-2 minorf-2
+                         majorf-3 minorf-3 majorf-4 minorf-4]
+                        (or (and (not= majorf+1 minorf+1)
+                                 (not= majorf+2 minorf+2)
+                                 (not= majorf+3 minorf+3)
+                                 (not= majorf+4 minorf+4))
+                            (and (not= majorf-1 minorf-1)
+                                 (not= majorf-2 minorf-2)
+                                 (not= majorf-3 minorf-3)
+                                 (not= majorf-4 minorf-4)))))
        (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
                         (and (> minfr1 0.003) (> minfr2 0.003)
                              (> minfr3 0.003) (> minfr4 0.003))))
@@ -414,12 +427,42 @@ gets pos nonsyn, with min allele and depth"
                         (and (> depth1 20.0 ) (> depth2 20.0 )
                              (> depth3 20.0 ) (> depth4 20.0 ))))
        (i/$where (i/$fn [CDS+ CDS-]
-                        (or  (not= CDS+ "-" ) )))
-       (i/$ [:ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
-             :minfr1 :minfr2 :minfr3 :minfr4])))
+                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
+       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS- :1
+             :majorf+1 :majorf+2 :majorf+3 :majorf+4  :2
+             :minorf+1 :minorf+2 :minorf+3 :minorf+4  :3
+             :majorf-1 :majorf-2 :majorf-3 :majorf-4  :4
+             :minorf-1 :minorf-2 :minorf-3 :minorf-4  ])))
 
-
-
-
-
-
+(defn filtre [file] 
+  "A prototype for filther removes nil, 
+gets pos nonsyn, with min allele and depth"
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
+                         depth3 minfr3 ]
+                        (and (not= nil depth1) (not= nil depth2)
+                             (not= nil depth3) )))
+       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2 majorf+3 minorf+3
+                         majorf-1 minorf-1 majorf-2 minorf-2 majorf-3 minorf-3]
+                        (or (and (not= majorf+1 minorf+1)
+                                 (not= majorf+2 minorf+2)
+                                 (not= majorf+3 minorf+3))
+                            (and (not= majorf-1 minorf-1)
+                                 (not= majorf-2 minorf-2)
+                                 (not= majorf-3 minorf-3)))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3]
+                        (and (> minfr1 0.003) (> minfr2 0.003)
+                             (> minfr3 0.003))))
+       (i/$where (i/$fn [pi1 pi2 pi3]
+                        (and (> pi1 0.0) (> pi2 0.0)
+                             (> pi3 0.0))))
+       (i/$where (i/$fn [depth1 depth2 depth3]
+                        (and (> depth1 20.0 ) (> depth2 20.0 )
+                             (> depth3 20.0 ))))
+       (i/$where (i/$fn [CDS+ CDS-]
+                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
+       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
+             :majorf+1 :majorf+2 :majorf+3
+             :minorf+1 :minorf+2 :minorf+3
+             :majorf-1 :majorf-2 :majorf-3
+             :minorf-1 :minorf-2 :minorf-3])))

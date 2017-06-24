@@ -16,42 +16,34 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE FILE LOCATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
-
-;;(def home                  "/home/yosh/datafiles/")
-;;(def input_file  (str home "genes/merlin.gff3"   ))
-;;(def output_file (str home "genes/merlin.inc"    ))
+;;(def home "/home/yosh/datafiles/incanted_files/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
-
-(def home                  "/mnt/data/datafiles/"  )
-(def input_file  (str home "concensus/merlin.gff3"))
-(def output_file (str home "concensus/refset.inc" ))
+(def home "/mnt/data/datafiles/incanted_files/")
 
 
- 
-(def L05-Pa  (str home "incanted_files/505-Pa.inc" ))
-(def L05-M   (str home "incanted_files/505-M.inc"  ))
+(def L05-Pa  (str home "505-Pa.inc" ))
+(def L05-M   (str home "505-M.inc"  ))
 
-(def L19-Pb  (str home "incanted_files/519-Pb.inc" ))
-(def L19-Pc  (str home "incanted_files/519-Pc.inc" ))
-(def L19-Pd  (str home "incanted_files/519-Pd.inc" ))
-(def L19-S1a (str home "incanted_files/519-S1a.inc"))
+(def L19-Pb  (str home "519-Pb.inc" ))
+(def L19-Pc  (str home "519-Pc.inc" ))
+(def L19-Pd  (str home "519-Pd.inc" ))
+(def L19-S1a (str home "519-S1a.inc"))
 
-(def L20-Pa  (str home "incanted_files/520-Pa.inc" ))
-(def L20-Pb  (str home "incanted_files/520-Pb.inc" ))
-(def L20-Pc  (str home "incanted_files/520-Pc.inc" ))
-(def L20-S1  (str home "incanted_files/520-S1.inc" )) 
-(def L20-S1a (str home "incanted_files/520-S1a.inc"))
+(def L20-Pa  (str home "520-Pa.inc" ))
+(def L20-Pb  (str home "520-Pb.inc" ))
+(def L20-Pc  (str home "520-Pc.inc" ))
+(def L20-S1  (str home "520-S1.inc" )) 
+(def L20-S1a (str home "520-S1a.inc"))
   
-(def L79-Pa  (str home "incanted_files/579-Pa.inc" ))
-(def L79-Pb  (str home "incanted_files/579-Pb.inc" ))
-(def L79-M   (str home "incanted_files/579-M.inc"  ))
-(def L79-S1a (str home "incanted_files/579-S1a.inc"))
-(def L79-S1b (str home "incanted_files/579-S1b.inc"))
+(def L79-Pa  (str home "579-Pa.inc" ))
+(def L79-Pb  (str home "579-Pb.inc" ))
+(def L79-M   (str home "579-M.inc"  ))
+(def L79-S1a (str home "579-S1a.inc"))
+(def L79-S1b (str home "579-S1b.inc"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -59,7 +51,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-set [file cov]
-  "open a csv.inc file"
+  "open an csv.inc file"
   (->> (ii/read-dataset file :header true)
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
@@ -76,14 +68,15 @@
 (def S20-Pa  (m-get-set L20-Pa  0))
 (def S20-Pb  (m-get-set L20-Pb  0))
 (def S20-Pc  (m-get-set L20-Pc  0))
-(def S20-S1  (m-get-set L20-S1  0)) 
-(def S20-S1a (m-get-set L20-S1a 0))
+(def S20-S1a (m-get-set L20-S1a 0)) 
+(def S20-S1b (m-get-set L20-S1  0))
   
 (def S79-Pa  (m-get-set L79-Pa  0))
 (def S79-Pb  (m-get-set L79-Pb  0))
 (def S79-M   (m-get-set L79-M   0))
 (def S79-S1a (m-get-set L79-S1a 0))
 (def S79-S1b (m-get-set L79-S1b 0))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;UNITE TWO DATASET AT COMMON SITES
