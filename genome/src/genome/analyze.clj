@@ -398,7 +398,8 @@
   (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
   (def a5b19a20S1b20     (gc/p-unite S05-Pa S19-Pb  S20-Pa  S20-S1b ))
   (def a5S1a19S1a20S1b20 (gc/p-unite S05-Pa S19-S1a S20-S1a S20-S1b ))
-  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b)))
+  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b ))
+  (def M5S1a19S1b20S1a20 (gc/p-unite S05-M  S19-S1a S20-S1b S79-M  )))
 
 (defn filtre4 [file] 
   "A prototype for filther removes nil, 

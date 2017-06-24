@@ -162,11 +162,15 @@
          (i/$where {:pi1 {:$ne nil}}))))
 
 
-(def pcaM (memoize PCA-matrix))
+(def pcaM   (memoize PCA-matrix))
+#_(def matrix (pcaM S05-Pa S05-M
+                  S19-Pb S19-Pc S19-Pd S19-S1a 
+                  S20-Pa S20-Pb S20-Pc S20-S1a S20-S1b 
+                  S79-Pa S79-Pb S79-M  S79-S1a S79-S1b ))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;PRINCIPLE COMPONENET ANALYSIS
+;Dimention reduction analysis
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn le-filter [file] 
@@ -196,16 +200,22 @@
                              (> minfr13 0.0035) (> minfr14 0.0035)
                              (> minfr15 0.0035) (> minfr16 0.0035))))
        (i/$where (i/$fn [depth1 depth2 depth3 depth4 depth5 depth6 depth7 depth8]
-                        (and (> depth1 20.0 ) (> depth2 20.0 )
-                             (> depth3 20.0 ) (> depth4 20.0 )
-                             (> depth5 20.0 ) (> depth6 20.0 )
-                             (> depth7 20.0 ) (> depth8 20.0 )))) 
+                        (and (> depth1  20.0 ) (> depth2  20.0 )
+                             (> depth3  20.0 ) (> depth4  20.0 )
+                             (> depth5  20.0 ) (> depth6  20.0 )
+                             (> depth7  20.0 ) (> depth8  20.0 )
+                             (> depth9  20.0 ) (> depth10 20.0 )
+                             (> depth11 20.0 ) (> depth12 20.0 )
+                             (> depth13 20.0 ) (> depth14 20.0 )
+                             (> depth15 20.0 ) (> depth16 20.0 )))) 
        (i/$ [:minfr1  :minfr2  :minfr3  :minfr4
              :minfr5  :minfr6  :minfr7  :minfr8
              :minfr9  :minfr10 :minfr11 :minfr12
              :minfr13 :minfr14 :minfr15 :minfr16])))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Normalizing covariance matrix
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn  normalize->mean-zero [col_name file]
   "snp sould be the string of the keyword"
   (let [m (st/mean (i/$ col_name file))]
@@ -224,7 +234,9 @@
          (reduce #(normalize->mean-zero %2 %1) dataset)
          (i/$ new_cols))))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Singular Value Decomposition
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
  (defn SNP-SVD [file from1 to1]
    (let [svd (->> file
                   (get-normalized from1 to1)
@@ -245,8 +257,11 @@
          (c/add-points (i/$ (range 9 16) 0 projection)
                        (i/$ (range 9 16) 1 projection))
          (i/view))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Pricipal Components Analysis
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn SNPxs [file]
   (let [data       (->> file
                         PCA-filter 
