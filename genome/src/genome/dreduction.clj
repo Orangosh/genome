@@ -163,10 +163,14 @@
 
 
 (def pcaM   (memoize PCA-matrix))
-#_(def matrix (pcaM S05-Pa S05-M
-                  S19-Pb S19-Pc S19-Pd S19-S1a 
-                  S20-Pa S20-Pb S20-Pc S20-S1a S20-S1b 
-                  S79-Pa S79-Pb S79-M  S79-S1a S79-S1b ))
+#_(def matrix (pcaM S05-Pa
+                    S19-Pb  S19-Pc  S19-Pd 
+                    S20-Pa  S20-Pb  S20-Pc 
+                    S79-Pa  S79-Pb
+                    S05-M   S79-M
+                    S19-S1a
+                    S20-S1a S20-S1b
+                    S79-S1a S79-S1b      ))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -199,7 +203,10 @@
                              (> minfr11 0.0035) (> minfr12 0.0035)
                              (> minfr13 0.0035) (> minfr14 0.0035)
                              (> minfr15 0.0035) (> minfr16 0.0035))))
-       (i/$where (i/$fn [depth1 depth2 depth3 depth4 depth5 depth6 depth7 depth8]
+       (i/$where (i/$fn [depth1  depth2  depth3  depth4
+                         depth5  depth6  depth7  depth8
+                         depth9  depth10 depth11 depth12
+                         depth13 depth14 depth15 depth16]
                         (and (> depth1  20.0 ) (> depth2  20.0 )
                              (> depth3  20.0 ) (> depth4  20.0 )
                              (> depth5  20.0 ) (> depth6  20.0 )
@@ -237,27 +244,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Singular Value Decomposition
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- (defn SNP-SVD [file from1 to1]
-   (let [svd (->> file
-                  (get-normalized from1 to1)
-                  i/to-matrix
-                  i/trans
-                  i/decomp-svd)
-         dims 2
-         u (i/$
-            (range dims) (:U svd))
-         s (i/diag (take dims
-                         (:S svd)))
-         v (i/trans (i/$ (range dims) (:V svd)))
-         projection (i/mmult u s)]
-     (-> (c/scatter-plot (i/$ (range 0 9) 0 projection)
-                         (i/$ (range 0 9) 1 projection)
-                         :x-label "Dimension 1"
-                         :y-label "Dimension 2")
-         (c/add-points (i/$ (range 9 16) 0 projection)
-                       (i/$ (range 9 16) 1 projection))
-         (i/view))))
-
+(defn SNP-SVD [file from1 to1]
+  (let [svd (->> file
+                 (get-normalized from1 to1)
+                 i/to-matrix
+                 i/trans
+                 i/decomp-svd)
+        dims 2
+        u (i/$
+           (range dims) (:U svd))
+        s (i/diag (take dims
+                        (:S svd)))
+        v (i/trans (i/$ (range dims) (:V svd)))
+        projection (i/mmult u s)]
+    (-> (c/scatter-plot (i/$ (range 0 9) 0 projection)
+                        (i/$ (range 0 9) 1 projection)
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ (range 9 16) 0 projection)
+                      (i/$ (range 9 16) 1 projection))
+        (i/view))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Pricipal Components Analysis
