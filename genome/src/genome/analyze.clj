@@ -79,7 +79,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Gneral description
+;; Gneral description
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -124,18 +124,22 @@
            [:sample]
            #(subs (first (i/$ :r_seq  %)) 3))
        (i/add-derived-column
-           :n-seg
-           [:sample]
-           #(/ (double (cutoff %))
-               (i/nrow %)))
-       (i/add-derived-column
            :mean-cov
            [:sample]
            #(/ (sum-cov %)
                (i/nrow  %)))
        (i/add-derived-column
-           :nuc-div
+           :cov>20
            [:sample]
+           #(i/$where ($fn [cov] (> cov 20))))
+       (i/add-derived-column
+           :n-seg
+           [:cov>20]
+           #(/ (double (cutoff %))
+               (i/nrow %)))
+       (i/add-derived-column
+           :nuc-div
+           [:cov>20]
            #(/ (sum-pi %)
                (i/nrow %)))
        (i/$ [:name :player :time-pt :n-seg :m-cov :m-div :sample])))
@@ -253,13 +257,6 @@
   (def W79-M   (win-100 (m-get-set L79-M   20)))
   (def W79-S1a (win-100 (m-get-set L79-S1a 20)))
   (def W79-S1b (win-100 (m-get-set L79-S1b 20))))
-
-
-
-
-
-
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -394,12 +391,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-united []
-  (def a5b19a20          (gc/p-unite S05-Pa S19-Pb  S20-Pa          ))
+  (def a79b79            (gc/p-unite S79-Pa S79-S1a                 ))
+  (def a20b20c20         (gc/p-unite S20-Pa S20-Pb  S20-Pc          ))
+  (def b19c19c19         (gc/p-unite S19-Pb S19-Pc  S19-Pd          ))
   (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
-  (def a5b19a20S1b20     (gc/p-unite S05-Pa S19-Pb  S20-Pa  S20-S1b ))
-  (def a5S1a19S1a20S1b20 (gc/p-unite S05-Pa S19-S1a S20-S1a S20-S1b ))
-  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b ))
-  (def M5S1a19S1b20S1a20 (gc/p-unite S05-M  S19-S1a S20-S1b S79-M  )))
+  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b )))
 
 (defn filtre4 [file] 
   "A prototype for filther removes nil, 
