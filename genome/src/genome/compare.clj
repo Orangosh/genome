@@ -14,6 +14,72 @@
            [genome.dna2aa     :as da ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;DEFINE FILE LOCATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For PC
+;;(def home "/home/yosh/datafiles/incanted_files/")
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For Server
+(def home "/mnt/data/datafiles/incanted_files/")
+
+
+(def L05-Pa  (str home "505-Pa.inc" ))
+(def L05-M   (str home "505-M.inc"  ))
+
+(def L19-Pb  (str home "519-Pb.inc" ))
+(def L19-Pc  (str home "519-Pc.inc" ))
+(def L19-Pd  (str home "519-Pd.inc" ))
+(def L19-S1a (str home "519-S1a.inc"))
+
+(def L20-Pa  (str home "520-Pa.inc" ))
+(def L20-Pb  (str home "520-Pb.inc" ))
+(def L20-Pc  (str home "520-Pc.inc" ))
+(def L20-S1  (str home "520-S1.inc" )) 
+(def L20-S1a (str home "520-S1a.inc"))
+  
+(def L79-Pa  (str home "579-Pa.inc" ))
+(def L79-Pb  (str home "579-Pb.inc" ))
+(def L79-M   (str home "579-M.inc"  ))
+(def L79-S1a (str home "579-S1a.inc"))
+(def L79-S1b (str home "579-S1b.inc"))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;GET SET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-set [file cov]
+  "open an csv.inc file"
+  (->> (ii/read-dataset file :header true)
+       (i/$where (i/$fn [depth] (< cov depth)))))
+(def m-get-set (memoize get-set))
+
+(defn les-sets [])
+(def S05-Pa  (m-get-set L05-Pa  0))
+(def S05-M   (m-get-set L05-M   0))
+
+(def S19-Pb  (m-get-set L19-Pb  0))
+(def S19-Pc  (m-get-set L19-Pc  0))
+(def S19-Pd  (m-get-set L19-Pd  0))
+(def S19-S1a (m-get-set L19-S1a 0))
+
+(def S20-Pa  (m-get-set L20-Pa  0))
+(def S20-Pb  (m-get-set L20-Pb  0))
+(def S20-Pc  (m-get-set L20-Pc  0))
+(def S20-S1a (m-get-set L20-S1a 0)) 
+(def S20-S1b (m-get-set L20-S1  0))
+  
+(def S79-Pa  (m-get-set L79-Pa  0))
+(def S79-Pb  (m-get-set L79-Pb  0))
+(def S79-M   (m-get-set L79-M   0))
+(def S79-S1a (m-get-set L79-S1a 0))
+(def S79-S1b (m-get-set L79-S1b 0))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING SNP TREND
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -108,6 +174,124 @@
           (i/$join [:loc :loc] coled4)
           (i/$where {:A2 {:$ne nil}}))))) 
 (def p-unite (memoize unite))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; After filtering (i/$where) get genes
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+       
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-united []
+  (def a79b79            (gc/p-unite S79-Pa S79-S1a                 ))
+  (def a20b20c20         (gc/p-unite S20-Pa S20-Pb  S20-Pc          ))
+  (def b19c19c19         (gc/p-unite S19-Pb S19-Pc  S19-Pd          ))
+  (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
+  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b )))
+
+(defn filtre4 [file] 
+  "A prototype for filther removes nil, 
+gets pos nonsyn, with min allele and depth"
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
+                         depth3 minfr3 depth4 minfr4]
+                        (and (not= nil depth1) (not= nil depth2)
+                             (not= nil depth3) (not= nil depth4))))
+       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2
+                         majorf+3 minorf+3 majorf+4 minorf+4
+                         majorf-1 minorf-1 majorf-2 minorf-2
+                         majorf-3 minorf-3 majorf-4 minorf-4]
+                        (or (and (not= majorf+1 minorf+1)
+                                 (not= majorf+2 minorf+2)
+                                 (not= majorf+3 minorf+3)
+                                 (not= majorf+4 minorf+4))
+                            (and (not= majorf-1 minorf-1)
+                                 (not= majorf-2 minorf-2)
+                                 (not= majorf-3 minorf-3)
+                                 (not= majorf-4 minorf-4)))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
+                        (and (> minfr1 0.003) (> minfr2 0.003)
+                             (> minfr3 0.003) (> minfr4 0.003))))
+       (i/$where (i/$fn [depth1 depth2 depth3 depth4]
+                        (and (> depth1 20.0 ) (> depth2 20.0 )
+                             (> depth3 20.0 ) (> depth4 20.0 ))))
+       (i/$where (i/$fn [CDS+ CDS-]
+                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
+       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS- :1
+             :majorf+1 :majorf+2 :majorf+3 :majorf+4  :2
+             :minorf+1 :minorf+2 :minorf+3 :minorf+4  :3
+             :majorf-1 :majorf-2 :majorf-3 :majorf-4  :4
+             :minorf-1 :minorf-2 :minorf-3 :minorf-4  ])))
+
+(defn filtre3 [file] 
+  "A prototype for filther removes nil, 
+gets pos nonsyn, with min allele and depth"
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
+                         depth3 minfr3 ]
+                        (and (not= nil depth1) (not= nil depth2) (not= nil depth3))))
+       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2 majorf+3 minorf+3
+                         majorf-1 minorf-1 majorf-2 minorf-2 majorf-3 minorf-3]
+                        (or (and (not= majorf+1 minorf+1)
+                                 (not= majorf+2 minorf+2)
+                                 (not= majorf+3 minorf+3))
+                            (and (not= majorf-1 minorf-1)
+                                 (not= majorf-2 minorf-2)
+                                 (not= majorf-3 minorf-3)))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3]
+                        (and (> minfr1 0.003) (> minfr2 0.003) (> minfr3 0.003))))
+       (i/$where (i/$fn [pi1 pi2 pi3]
+                        (and (> pi1 0.0) (> pi2 0.0) (> pi3 0.0))))
+       (i/$where (i/$fn [depth1 depth2 depth3]
+                        (and (> depth1 20.0 ) (> depth2 20.0 ) (> depth3 20.0 ))))
+       (i/$where (i/$fn [CDS+ CDS-] (or  (not= CDS+ "-" ) (not= CDS- "-"))))
+       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
+             :majorf+1 :majorf+2 :majorf+3
+             :minorf+1 :minorf+2 :minorf+3
+             :majorf-1 :majorf-2 :majorf-3
+             :minorf-1 :minorf-2 :minorf-3])))
+
+(defn filtre2 [file] 
+  "A prototype for filther removes nil"
+  "gets pos nonsyn, with min allele and depth"
+  (->> file
+       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2]
+                        (and (not= nil depth1) (not= nil depth2))))
+       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2 
+                         majorf-1 minorf-1 majorf-2 minorf-2]
+                        (or (and (not= majorf+1 minorf+1)
+                                 (not= majorf+2 minorf+2))
+                            (and (not= majorf-1 minorf-1)
+                                 (not= majorf-2 minorf-2)))))
+       (i/$where (i/$fn [minfr1 minfr2 minfr3]
+                        (and (> minfr1 0.003) (> minfr2 0.003))))
+       (i/$where (i/$fn [pi1 pi2]
+                        (and (> pi1 0.0) (> pi2 0.0))))
+       (i/$where (i/$fn [depth1 depth2 depth3]
+                        (and (> depth1 20.0 ) (> depth2 20.0 ))))
+       (i/$where (i/$fn [CDS+ CDS-]
+                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
+       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
+             :majorf+1 :majorf+2 :minorf+1 :minorf+2 
+             :majorf-1 :majorf-2 :minorf-1 :minorf-2])))
+
+
+(defn gene-table[filtre file]
+  "returns a table which contains genes and their frequencies given a set and filter"
+  (let [g+  (i/$ :gfwd+ (filtre file))
+        g-  (i/$ :gfwd+ (filtre file))]
+    (i/$order :col-1 :desc
+              (#(i/conj-cols (vec (keys %)) (vec (vals %)))
+               (frequencies (concat g+ g-))))))
+
+(defn intersect [file1 file2 filtre range-x]
+  "returns a set of common genes"
+  (let [rngx (min (i/nrow (gene-table filtre file1))
+                  (i/nrow (gene-table filtre file2)) range-x)
+        tab1 (set (i/$ :col-0 (i/$ (range rngx) :all (gene-table filtre file1))))
+        tab2 (set (i/$ :col-0 (i/$ (range rngx) :all (gene-table filtre file2))))]
+    (clojure.set/intersection tab1 tab2)))            
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;CALCULATING MUTATION RATE

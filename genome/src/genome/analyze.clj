@@ -104,7 +104,7 @@
   (->> (i/dataset
         [:sample  :player   :time-pt]
         [[S05-Pa  "Primary" 1]
-         [S05-M   "Mother"  1]
+         [S05-M   "Mother"  1];;for graphs remove
          [S19-Pb  "Primary" 1]
          [S19-Pc  "Primary" 2]
          [S19-Pd  "Primary" 3]
@@ -120,30 +120,35 @@
          [S79-S1a "Sibling" 1]
          [S79-S1b "Sibling" 2]])
        (i/add-derived-column
-           :name
-           [:sample]
-           #(subs (first (i/$ :r_seq  %)) 3))
+        :name
+        [:sample]
+        #(subs (first (i/$ :r_seq  %)) 3))
        (i/add-derived-column
-           :mean-cov
-           [:sample]
-           #(/ (sum-cov %)
-               (i/nrow  %)))
+        :mean-cov
+        [:sample]
+        #(format "%.2f" (/ (sum-cov %)
+                                 (i/nrow  %))))
        (i/add-derived-column
-           :cov>20
-           [:sample]
-           #(i/$where ($fn [cov] (> cov 20))))
+        :cov>20
+        [:sample]
+        #(i/$where (i/$fn [cov] (> cov 20)) %))
        (i/add-derived-column
-           :n-seg
-           [:cov>20]
-           #(/ (double (cutoff %))
-               (i/nrow %)))
+        :n-seg
+        [:cov>20]
+        #(if (> (i/nrow %) 0)
+           (format "%.5f" (/ (double (cutoff %)) (i/nrow %))) 0))
        (i/add-derived-column
-           :nuc-div
-           [:cov>20]
-           #(/ (sum-pi %)
-               (i/nrow %)))
-       (i/$ [:name :player :time-pt :n-seg :m-cov :m-div :sample])))
+        :nuc-div
+        [:cov>20]
+        #(if (> (i/nrow %) 0)
+           (format "%.10f" (/ (sum-pi %) (i/nrow %))) 0))
+       (i/add-derived-column
+        :sfs
+        [:cov>20]
+        #(if (> (i/nrow %) 0) (p/bin-sfs 10 (da/get-synonymous %)) 0))
+       (i/$ [:name :player :time-pt :mean-cov :n-seg:nuc-div :sample :cov>20 :sfs])))
 (def p-samples (memoize samples))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Simple visualizations
@@ -202,7 +207,7 @@
                (reduce + (map #(i/nrow %) run_vec))))))
 
 (defn stat-all []
-  (println "mean coverage for all:           " (run-all sum-cov))
+  (println "mean coverage for all:           " (i/mean :))
   (println "Nucleotide diversity:            " (run-all sum-pi ))
   (println "Segregating Sites per nucleotid: " (run-all cutoff)))
 #_ (stat-all)
@@ -277,27 +282,27 @@
                  file)))
 
 (defn all-freq-view [file1 file2 dep]
-                  (-> (c/xy-plot   :loc :minfr
-                       :x-label "Position" :y-label "Minor variants frequency"
-                       :title (str dep " minimal")
-                       :data (fr-dist file1 dep 1.0)) 
-                      (c/add-lines :loc :minfr
-                       :data (fr-dist file2 dep 1.0 ))
-                      (c/add-lines :loc  :minfr
-                       :data (fr-dist file1 dep 0.1))
-                      (c/add-lines :loc  :minfr
-                       :data (fr-dist file2 dep 0.1))
-                      (c/add-lines :loc  :minfr
-                       :data (fr-dist file1 dep 0.003))
-                      (c/add-lines :loc  :minfr
-                       :data (fr-dist file2 dep 0.003))
-                      (c/add-lines :loc 
-                       (map #(/ % 100000) (i/$ :depth file1))
-                       :data  file1)
-                      (c/add-lines :loc 
-                       (map #(/ % 10000) (i/$ :depth file2))
-                       :data  file2)
-                      (i/view)))   
+  (-> (c/xy-plot   :loc :minfr
+                   :x-label "Position" :y-label "Minor variants frequency"
+                   :title (str dep " minimal")
+                   :data (fr-dist file1 dep 1.0)) 
+      (c/add-lines :loc :minfr
+                   :data (fr-dist file2 dep 1.0 ))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file1 dep 0.1))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file2 dep 0.1))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file1 dep 0.003))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file2 dep 0.003))
+      (c/add-lines :loc 
+                   (map #(/ % 100000) (i/$ :depth file1))
+                   :data  file1)
+      (c/add-lines :loc 
+                   (map #(/ % 10000) (i/$ :depth file2))
+                   :data  file2)
+      (i/view)))   
 
 (defn poisson-nonfilthered [dep mfr file]
   "get all poisson filtered data which is poistive under certain minor freq (mfr)"
@@ -325,141 +330,3 @@
              :orf+ :majorf+ :minorf+])
        (i/$where (i/$fn [majorf+ minorf+] (not= majorf+ minorf+)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;Get genes
-
-(import '(org.jfree.chart StandardChartTheme)
-        '(org.jfree.chart.plot DefaultDrawingSupplier)
-        '(java.awt Color))
-
-(def all-red-theme 
-  (doto (StandardChartTheme/createJFreeTheme)
-    (.setDrawingSupplier
-     (proxy [DefaultDrawingSupplier] []
-       (getNextPaint [] Color/blue)))))
-
-(defn get-gene [function col file]
-  "function is any filter/ col is usualy :gfwd+/-"
-  (let [general (->> file
-                     (i/$ col)
-                     frequencies
-                     (map vec)
-                     vec
-                     (i/dataset [col :refsum]))
-        specific (->> (function file)
-                      (i/$ col)
-                      frequencies
-                      (map vec)
-                      vec
-                      (i/dataset [col :sum]))
-        spec&gen (i/$join [col col] general specific)]
-    (->> spec&gen
-         (i/add-derived-column
-          :ratio
-          [:sum :refsum]
-          #(double (/ %1 %2)))
-         (i/$order :ratio :desc))))
-
-
-
-(defn view-gene [function col filename file]
-  (-> (c/bar-chart
-       col
-       :ratio
-       :title filename 
-       :legend true
-       :data (i/$ (range 0 10) :all (get-gene file function col)))
-      (c/set-theme all-red-theme)
-      i/view))
-
-(defn pi-view
-  [file]
-  (-> (c/xy-plot
-       :loc
-       :ratio
-       :x-label "Position"
-       :y-label "Ratio"
-       :title "Comparde"
-       :data file) 
-      (c/add-lines
-       :loc :rations
-       :data file)
-      (i/view)))   
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;COMPARISON ANALYSES
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-united []
-  (def a79b79            (gc/p-unite S79-Pa S79-S1a                 ))
-  (def a20b20c20         (gc/p-unite S20-Pa S20-Pb  S20-Pc          ))
-  (def b19c19c19         (gc/p-unite S19-Pb S19-Pc  S19-Pd          ))
-  (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
-  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b )))
-
-(defn filtre4 [file] 
-  "A prototype for filther removes nil, 
-gets pos nonsyn, with min allele and depth"
-  (->> file
-       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
-                         depth3 minfr3 depth4 minfr4]
-                        (and (not= nil depth1) (not= nil depth2)
-                             (not= nil depth3) (not= nil depth4))))
-       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2
-                         majorf+3 minorf+3 majorf+4 minorf+4
-                         majorf-1 minorf-1 majorf-2 minorf-2
-                         majorf-3 minorf-3 majorf-4 minorf-4]
-                        (or (and (not= majorf+1 minorf+1)
-                                 (not= majorf+2 minorf+2)
-                                 (not= majorf+3 minorf+3)
-                                 (not= majorf+4 minorf+4))
-                            (and (not= majorf-1 minorf-1)
-                                 (not= majorf-2 minorf-2)
-                                 (not= majorf-3 minorf-3)
-                                 (not= majorf-4 minorf-4)))))
-       (i/$where (i/$fn [minfr1 minfr2 minfr3 minfr4]
-                        (and (> minfr1 0.003) (> minfr2 0.003)
-                             (> minfr3 0.003) (> minfr4 0.003))))
-       (i/$where (i/$fn [depth1 depth2 depth3 depth4]
-                        (and (> depth1 20.0 ) (> depth2 20.0 )
-                             (> depth3 20.0 ) (> depth4 20.0 ))))
-       (i/$where (i/$fn [CDS+ CDS-]
-                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
-       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS- :1
-             :majorf+1 :majorf+2 :majorf+3 :majorf+4  :2
-             :minorf+1 :minorf+2 :minorf+3 :minorf+4  :3
-             :majorf-1 :majorf-2 :majorf-3 :majorf-4  :4
-             :minorf-1 :minorf-2 :minorf-3 :minorf-4  ])))
-
-(defn filtre [file] 
-  "A prototype for filther removes nil, 
-gets pos nonsyn, with min allele and depth"
-  (->> file
-       (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
-                         depth3 minfr3 ]
-                        (and (not= nil depth1) (not= nil depth2)
-                             (not= nil depth3) )))
-       (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2 majorf+3 minorf+3
-                         majorf-1 minorf-1 majorf-2 minorf-2 majorf-3 minorf-3]
-                        (or (and (not= majorf+1 minorf+1)
-                                 (not= majorf+2 minorf+2)
-                                 (not= majorf+3 minorf+3))
-                            (and (not= majorf-1 minorf-1)
-                                 (not= majorf-2 minorf-2)
-                                 (not= majorf-3 minorf-3)))))
-       (i/$where (i/$fn [minfr1 minfr2 minfr3]
-                        (and (> minfr1 0.003) (> minfr2 0.003)
-                             (> minfr3 0.003))))
-       (i/$where (i/$fn [pi1 pi2 pi3]
-                        (and (> pi1 0.0) (> pi2 0.0)
-                             (> pi3 0.0))))
-       (i/$where (i/$fn [depth1 depth2 depth3]
-                        (and (> depth1 20.0 ) (> depth2 20.0 )
-                             (> depth3 20.0 ))))
-       (i/$where (i/$fn [CDS+ CDS-]
-                        (or  (not= CDS+ "-" ) (not= CDS- "-"))))
-       (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
-             :majorf+1 :majorf+2 :majorf+3
-             :minorf+1 :minorf+2 :minorf+3
-             :majorf-1 :majorf-2 :majorf-3
-             :minorf-1 :minorf-2 :minorf-3])))
