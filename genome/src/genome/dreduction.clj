@@ -4,13 +4,7 @@
            [incanter.io       :as ii ]
            [incanter.stats    :as st ]
            [incanter.charts   :as c  ]
-           [genome.dna2aa     :as da ]
-           [genome.stats      :as gs ]           
-           [genome.consvar    :as cv ]
-           [genome.pop        :as p  ]
-           [genome.compare    :as gc ]
-           [clojure.data.csv  :as csv]
-           [genome.view       :as v  ]))
+           [clojure.data.csv  :as csv]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -177,6 +171,8 @@
   (with-open [f-out (io/writer file_out)]
     (csv/write-csv f-out [(map name (i/col-names pcaM))])
         (csv/write-csv f-out (i/to-list pcaM))))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Dimention reduction analysis
