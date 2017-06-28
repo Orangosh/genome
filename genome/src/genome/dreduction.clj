@@ -172,6 +172,11 @@
                     S20-S1a S20-S1b
                     S79-S1a S79-S1b      ))
 
+(defn save-mat [pcaM file-out]
+  "/home/yosh/datafiles/incanted_files"
+  (with-open [f-out (io/writer file_out)]
+    (csv/write-csv f-out [(map name (i/col-names pcaM))])
+        (csv/write-csv f-out (i/to-list pcaM))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;Dimention reduction analysis

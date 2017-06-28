@@ -175,24 +175,22 @@
           (i/$where {:A2 {:$ne nil}}))))) 
 (def p-unite (memoize unite))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; After filtering (i/$where) get genes
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
        
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-#_(defn get-united []
-    ;;overtime
-    (def a79b79          (p-unite S79-Pa S79-Pb                  ))
-    (def a20b20c20       (p-unite S20-Pa S20-Pb  S20-Pc          ))
-    (def b19c19d19       (p-unite S19-Pb S19-Pc  S19-Pd          ))
-    ;;overtime siblings
-    (def Sa79Sb79        (p-unite S79-S1a S79-S1b                ))
-    (def Sa20Sb20        (p-unite S20-S1a S20-S1b                ))
-    ;;
-    (def a5b19a20a79     (p-unite S05-Pa  S19-Pb  S20-Pa S79-Pa  ))
+#_(defn overtime []
+    (def a79b79          (p-unite S79-Pa S79-Pb))
+    (def a20b20c20       (p-unite S20-Pa S20-Pb  S20-Pc))
+    (def b19c19d19       (p-unite S19-Pb S19-Pc  S19-Pd)))
+#_(defn overtime-sibs []
+    (def Sa79Sb79        (p-unite S79-S1a S79-S1b))
+    (def Sa20Sb20        (p-unite S20-S1a S20-S1b)))
+#_(defn prim-others []
+    (def a5b19a20a79     (p-unite S05-Pa  S19-Pb  S20-Pa S79-Pa))
     (def Sa19Sa20M79Sa79 (p-unite S19-S1a S20-S1a S79-M  S79-S1a)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Post union filtering 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (defn filtre4 [file] 
   "A prototype for filther removes nil, 
@@ -279,6 +277,21 @@ gets pos nonsyn, with min allele and depth"
        (i/$ [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-
              :majorf+1 :majorf+2 :minorf+1 :minorf+2 
              :majorf-1 :majorf-2 :minorf-1 :minorf-2])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Post filering union and summary
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn unite-united
+  [filtre file1 file2]
+   "Unites 2 united files filtre should be adjusted to the originally united files"
+  (let [set1   (add-row (filtre file1))
+        set2   (add-row (filtre file2))
+         coled1 (i/rename-cols (col-rename set1 1) set1)
+         coled2 (i/rename-cols (col-rename set2 2) set2)]
+     (->> coled1
+          (i/$join [:loc :loc] coled2)
+          (i/$where {:ref-loc12 {:$ne nil}}))))
 
 
 (defn gene-table[filtre file]
