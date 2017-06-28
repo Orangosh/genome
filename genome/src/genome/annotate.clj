@@ -3,7 +3,6 @@
            [clojure.string    :as s  ]
            [clojure.data.csv  :as csv]
            [incanter.core     :as i  ]
-           [genome.annotate   :as ga ]
            [incanter.io       :as ii ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -167,7 +166,7 @@
 
 (defn get-annotation [input_file]
   "creates an annotation"
-  (let [ann_cols (ga/gff3>dataset input_file)]
+  (let [ann_cols (gff3>dataset input_file)]
     (->> (i/$ (vec (sort (distinct  (i/col-names ann_cols)))) ann_cols)
          (i/$ [:loc   :gfwd+ :gbwd+ :gfwd- :gbwd-
                :CDS+  :CDS-  :exon- :exon+]))))

@@ -182,12 +182,17 @@
        
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-united []
-  (def a79b79            (gc/p-unite S79-Pa S79-S1a                 ))
-  (def a20b20c20         (gc/p-unite S20-Pa S20-Pb  S20-Pc          ))
-  (def b19c19c19         (gc/p-unite S19-Pb S19-Pc  S19-Pd          ))
-  (def a5b19a20a79       (gc/p-unite S05-Pa S19-Pb  S20-Pa  S79-Pa  ))
-  (def M5S1a19S1a20S1b20 (gc/p-unite S05-M  S19-S1a S20-S1a S20-S1b )))
+#_(defn get-united []
+    ;;overtime
+    (def a79b79          (p-unite S79-Pa S79-Pb                  ))
+    (def a20b20c20       (p-unite S20-Pa S20-Pb  S20-Pc          ))
+    (def b19c19d19       (p-unite S19-Pb S19-Pc  S19-Pd          ))
+    ;;overtime siblings
+    (def Sa79Sb79        (p-unite S79-S1a S79-S1b                ))
+    (def Sa20Sb20        (p-unite S20-S1a S20-S1b                ))
+    ;;
+    (def a5b19a20a79     (p-unite S05-Pa  S19-Pb  S20-Pa S79-Pa  ))
+    (def Sa19Sa20M79Sa79 (p-unite S19-S1a S20-S1a S79-M  S79-S1a)))
 
 (defn filtre4 [file] 
   "A prototype for filther removes nil, 
@@ -229,7 +234,7 @@ gets pos nonsyn, with min allele and depth"
   (->> file
        (i/$where (i/$fn [depth1 minfr1 depth2 minfr2
                          depth3 minfr3 ]
-                        (and (not= nil depth1) (not= nil depth2) (not= nil depth3))))
+                        (and (not= nil depth1) (not= nil depth2) (not= nil depth3) )))
        (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2 majorf+3 minorf+3
                          majorf-1 minorf-1 majorf-2 minorf-2 majorf-3 minorf-3]
                         (or (and (not= majorf+1 minorf+1)

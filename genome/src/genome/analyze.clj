@@ -8,7 +8,6 @@
            [genome.stats      :as gs ]           
            [genome.consvar    :as cv ]
            [genome.pop        :as p  ]
-           [genome.compare    :as gc ]
            [clojure.data.csv  :as csv]
            [genome.view       :as v  ]))
 
@@ -88,13 +87,13 @@
 
 (defn cutoff [file]
   (i/nrow (i/$where (i/$fn [minfr pi]
-                           (and (> minfr 0.0003)
+                           (and (> minfr 0.0035)
                                 (> pi 0.0))) file)))
 (defn sum-cov [file]
   (i/sum (i/$ :depth file)))
 
 (defn sum-pi [file]
-  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.0003)) file))))
+  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.0035)) file))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,8 +125,8 @@
        (i/add-derived-column
         :mean-cov
         [:sample]
-        #(format "%.2f" (/ (sum-cov %)
-                                 (i/nrow  %))))
+        #(/ (sum-cov %)
+            (i/nrow  %)))
        (i/add-derived-column
         :cov>20
         [:sample]
@@ -136,19 +135,18 @@
         :n-seg
         [:cov>20]
         #(if (> (i/nrow %) 0)
-           (format "%.5f" (/ (double (cutoff %)) (i/nrow %))) 0))
+           (/ (double (cutoff %)) (i/nrow %)) 0.0))
        (i/add-derived-column
         :nuc-div
         [:cov>20]
         #(if (> (i/nrow %) 0)
-           (format "%.10f" (/ (sum-pi %) (i/nrow %))) 0))
+           (/ (sum-pi %) (i/nrow %)) 0.0))
        (i/add-derived-column
         :sfs
         [:cov>20]
         #(if (> (i/nrow %) 0) (p/bin-sfs 10 (da/get-synonymous %)) 0))
-       (i/$ [:name :player :time-pt :mean-cov :n-seg:nuc-div :sample :cov>20 :sfs])))
+       (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div :sample :cov>20 :sfs])))
 (def p-samples (memoize samples))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Simple visualizations
@@ -202,12 +200,12 @@
 
 (defn run-all [fnc]
   " a function that accept funcinos returns a valur "
-  (let [run_vec (i/$ :sample (p-samples))]
+  (let [run_vec (i/$ :cov>20 (p-samples))]
     (double (/ (reduce + (map #(fnc %) run_vec))
                (reduce + (map #(i/nrow %) run_vec))))))
 
 (defn stat-all []
-  (println "mean coverage for all:           " (i/mean :))
+  (println "mean coverage for all:           " (run-all sum-cov))
   (println "Nucleotide diversity:            " (run-all sum-pi ))
   (println "Segregating Sites per nucleotid: " (run-all cutoff)))
 #_ (stat-all)
