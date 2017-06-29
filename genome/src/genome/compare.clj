@@ -7,7 +7,6 @@
            [incanter.stats    :as st ]
            [clojure.string    :as s  ]
            [clojure.data.csv  :as csv]
-           [genome.database   :as gd ]
            [genome.stats      :as gs ]
            [genome.pop        :as p  ]
            [genome.consvar    :as cv ]
@@ -107,7 +106,7 @@
 ;DEFINE NEW COLUMN NAME
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn  col-rename [file ser_num]
+(defn  c-rename [file ser_num]
   "This one is for adding a serial number at the end of a col name"
   (let [dont-change #{:loc  :merlin :gfwd+ :gfwd- :gbwd+ :gbwd-
                       :CDS+ :CDS-   :exon+ :exon-}
@@ -138,54 +137,28 @@
   "creates a dataset which contains all sites with allele frequency"
   (add-row (add-snp-precent file)))
 
-(defn unite
-  ([file1 file2]
-   "Adds only file2 rows that have a common :loc value with file1"
-   (let [set1   (merge-prep file1)
-         set2   (merge-prep file2)
-         coled1 (i/rename-cols (col-rename set1 1) set1)
-         coled2 (i/rename-cols (col-rename set2 2) set2)]
-     (->> coled1
-          (i/$join [:loc :loc] coled2)
-          (i/$where {:A2 {:$ne nil}}))))
-  ([file1 file2 file3]
-   (let [set1   (merge-prep file1)
-         set2   (merge-prep file2)
-         set3   (merge-prep file3)
-         coled1 (i/rename-cols (col-rename set1 1) set1)
-         coled2 (i/rename-cols (col-rename set2 2) set2)
-         coled3 (i/rename-cols (col-rename set3 3) set3)]
-     (->> coled1
-          (i/$join [:loc :loc] coled2)
-          (i/$join [:loc :loc] coled3)
-          (i/$where {:A2 {:$ne nil}}))))
-  ([file1 file2 file3 file4]
-   (let [set1   (merge-prep file1)
-         set2   (merge-prep file2)
-         set3   (merge-prep file3)
-         set4   (merge-prep file4)
-         coled1 (i/rename-cols (col-rename set1 1) set1)
-         coled2 (i/rename-cols (col-rename set2 2) set2)
-         coled3 (i/rename-cols (col-rename set3 3) set3)
-         coled4 (i/rename-cols (col-rename set4 4) set4)]
-     (->> coled1
-          (i/$join [:loc :loc] coled2)
-          (i/$join [:loc :loc] coled3)
-          (i/$join [:loc :loc] coled4)
-          (i/$where {:A2 {:$ne nil}}))))) 
-(def p-unite (memoize unite))
+(defn unite [samples]
+  (let [renamed (->> samples
+                     (map #(merge-prep %))
+                     (map #(i/rename-cols (c-rename %2 %1) %2) (iterate inc 1)))
+        renamed (first renamed)
+        enamed  (rest  renamed)]
+    (->> r
+         (reduce #(i/$join [:loc :loc] %1 %2) (map enamed))
+         (i/$where {:pi1 {:$ne nil}}))))
+    (def p-unite (memoize unite))
 
        
 #_(defn overtime []
-    (def a79b79          (p-unite S79-Pa S79-Pb))
-    (def a20b20c20       (p-unite S20-Pa S20-Pb  S20-Pc))
-    (def b19c19d19       (p-unite S19-Pb S19-Pc  S19-Pd)))
+    (def a79b79          (p-unite [S79-Pa S79-Pb]))
+    (def a20b20c20       (p-unite [S20-Pa S20-Pb  S20-Pc]))
+    (def b19c19d19       (p-unite [S19-Pb S19-Pc  S19-Pd])))
 #_(defn overtime-sibs []
-    (def Sa79Sb79        (p-unite S79-S1a S79-S1b))
-    (def Sa20Sb20        (p-unite S20-S1a S20-S1b)))
+    (def Sa79Sb79        (p-unite [S79-S1a S79-S1b]))
+    (def Sa20Sb20        (p-unite [S20-S1a S20-S1b])))
 #_(defn prim-others []
-    (def a5b19a20a79     (p-unite S05-Pa  S19-Pb  S20-Pa S79-Pa))
-    (def Sa19Sa20M79Sa79 (p-unite S19-S1a S20-S1a S79-M  S79-S1a)))
+    (def a5b19a20a79     (p-unite [S05-Pa  S19-Pb  S20-Pa S79-Pa]))
+    (def Sa19Sa20M79Sa79 (p-unite [S19-S1a S20-S1a S79-M  S79-S1a])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Post union filtering 

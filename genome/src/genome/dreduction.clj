@@ -1,14 +1,14 @@
 (ns genome.dreduction
-   (require [clojure.java.io   :as io ]
-           [incanter.core     :as i  ]
-           [incanter.io       :as ii ]
-           [incanter.stats    :as st ]
-           [incanter.charts   :as c  ]
+  (require [clojure.java.io   :as io]
+           [incanter.core     :as i]
+           [incanter.io       :as ii]
+           [incanter.stats    :as st]
+           [incanter.charts   :as c]
            [clojure.data.csv  :as csv]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;DEFINE FILE LOCATIONS
+                                        ;DEFINE FILE LOCATIONS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For PC
@@ -19,29 +19,29 @@
 (def home "/mnt/data/datafiles/incanted_files/")
 
 
-(def L05-Pa  (str home "505-Pa.inc" ))
-(def L05-M   (str home "505-M.inc"  ))
+(def L05-Pa  (str home "505-Pa.inc"))
+(def L05-M   (str home "505-M.inc"))
 
-(def L19-Pb  (str home "519-Pb.inc" ))
-(def L19-Pc  (str home "519-Pc.inc" ))
-(def L19-Pd  (str home "519-Pd.inc" ))
+(def L19-Pb  (str home "519-Pb.inc"))
+(def L19-Pc  (str home "519-Pc.inc"))
+(def L19-Pd  (str home "519-Pd.inc"))
 (def L19-S1a (str home "519-S1a.inc"))
 
-(def L20-Pa  (str home "520-Pa.inc" ))
-(def L20-Pb  (str home "520-Pb.inc" ))
-(def L20-Pc  (str home "520-Pc.inc" ))
-(def L20-S1  (str home "520-S1.inc" )) 
+(def L20-Pa  (str home "520-Pa.inc"))
+(def L20-Pb  (str home "520-Pb.inc"))
+(def L20-Pc  (str home "520-Pc.inc"))
+(def L20-S1  (str home "520-S1.inc"))
 (def L20-S1a (str home "520-S1a.inc"))
-  
-(def L79-Pa  (str home "579-Pa.inc" ))
-(def L79-Pb  (str home "579-Pb.inc" ))
-(def L79-M   (str home "579-M.inc"  ))
+
+(def L79-Pa  (str home "579-Pa.inc"))
+(def L79-Pb  (str home "579-Pb.inc"))
+(def L79-M   (str home "579-M.inc"))
 (def L79-S1a (str home "579-S1a.inc"))
 (def L79-S1b (str home "579-S1b.inc"))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;GET SET
+                                        ;GET SET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-set [file cov]
@@ -62,9 +62,9 @@
 (def S20-Pa  (m-get-set L20-Pa  0))
 (def S20-Pb  (m-get-set L20-Pb  0))
 (def S20-Pc  (m-get-set L20-Pc  0))
-(def S20-S1a (m-get-set L20-S1a 0)) 
+(def S20-S1a (m-get-set L20-S1a 0))
 (def S20-S1b (m-get-set L20-S1  0))
-  
+
 (def S79-Pa  (m-get-set L79-Pa  0))
 (def S79-Pb  (m-get-set L79-Pb  0))
 (def S79-M   (m-get-set L79-M   0))
@@ -73,7 +73,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;UNITE TWO DATASET AT COMMON SITES
+                                        ;UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-row [file]
@@ -90,7 +90,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn  c-rename [file ser_num]
   "This one is for adding a serial number at the end of a col name"
-  (let [dont-change #{ :loc }
+  (let [dont-change #{ :loc}
         old-cols (apply vector (remove #(contains? dont-change %)
                                        (i/col-names file)))
         new-cols (->> old-cols
@@ -100,85 +100,61 @@
          (interleave old-cols)
          (apply assoc {}))))
 
-(defn PCA-matrix
-  [file1  file2  file3  file4
-     file5  file6  file7  file8
-     file9  file10 file11 file12
-     file13 file14 file15 file16]
-  (let [set1    (add-row (i/$ [:loc :pi :minfr :depth] file1))
-        set2    (add-row (i/$ [:loc :pi :minfr :depth] file2))
-        set3    (add-row (i/$ [:loc :pi :minfr :depth] file3))
-        set4    (add-row (i/$ [:loc :pi :minfr :depth] file4))
-        set5    (add-row (i/$ [:loc :pi :minfr :depth] file5))
-        set6    (add-row (i/$ [:loc :pi :minfr :depth] file6))
-        set7    (add-row (i/$ [:loc :pi :minfr :depth] file7))
-        set8    (add-row (i/$ [:loc :pi :minfr :depth] file8))
-        set9    (add-row (i/$ [:loc :pi :minfr :depth] file9))
-        set10   (add-row (i/$ [:loc :pi :minfr :depth] file10))
-        set11   (add-row (i/$ [:loc :pi :minfr :depth] file11))
-        set12   (add-row (i/$ [:loc :pi :minfr :depth] file12))
-        set13   (add-row (i/$ [:loc :pi :minfr :depth] file13))
-        set14   (add-row (i/$ [:loc :pi :minfr :depth] file14))
-        set15   (add-row (i/$ [:loc :pi :minfr :depth] file15))
-        set16   (add-row (i/$ [:loc :pi :minfr :depth] file16))
-        coled1  (i/rename-cols (c-rename set1   1)  set1)
-        coled2  (i/rename-cols (c-rename set2   2)  set2)
-        coled3  (i/rename-cols (c-rename set3   3)  set3)
-        coled4  (i/rename-cols (c-rename set4   4)  set4)
-        coled5  (i/rename-cols (c-rename set5   5)  set5)
-        coled6  (i/rename-cols (c-rename set6   6)  set6)
-        coled7  (i/rename-cols (c-rename set7   7)  set7)
-        coled8  (i/rename-cols (c-rename set8   8)  set8)
-        coled9  (i/rename-cols (c-rename set9   9)  set9)
-        coled10 (i/rename-cols (c-rename set10 10) set10)
-        coled11 (i/rename-cols (c-rename set11 11) set11)
-        coled12 (i/rename-cols (c-rename set12 12) set12)
-        coled13 (i/rename-cols (c-rename set13 13) set13)
-        coled14 (i/rename-cols (c-rename set14 14) set14)
-        coled15 (i/rename-cols (c-rename set15 15) set15)
-        coled16 (i/rename-cols (c-rename set16 16) set16)]
-    (->> coled1
-         (i/$join [:loc :loc] coled2)
-         (i/$join [:loc :loc] coled3)
-         (i/$join [:loc :loc] coled4)
-         (i/$join [:loc :loc] coled5)
-         (i/$join [:loc :loc] coled6)
-         (i/$join [:loc :loc] coled7)
-         (i/$join [:loc :loc] coled8)
-         (i/$join [:loc :loc] coled9)
-         (i/$join [:loc :loc] coled10)
-         (i/$join [:loc :loc] coled11)
-         (i/$join [:loc :loc] coled12)
-         (i/$join [:loc :loc] coled13)
-         (i/$join [:loc :loc] coled14)
-         (i/$join [:loc :loc] coled15)
-         (i/$join [:loc :loc] coled16)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Reduce
+
+(defn PCA-matrix [samples]
+  (let [renamed (->> samples
+                     (map #(add-row (i/$ [:loc :pi :minfr :depth] %)))
+                     (map #(i/rename-cols (c-rename %2 %1) %2) (iterate inc 1)))
+        renamed (first renamed)
+        enamed  (rest  renamed)]
+    (->> r
+         (reduce #(i/$join [:loc :loc] %1 %2) (map enamed))
          (i/$where {:pi1 {:$ne nil}}))))
 
 
-(def pcaM   (memoize PCA-matrix))
-#_(def matrix (pcaM S05-Pa
-                    S19-Pb  S19-Pc  S19-Pd 
-                    S20-Pa  S20-Pb  S20-Pc 
-                    S79-Pa  S79-Pb
-                    S05-M   S79-M
-                    S19-S1a
-                    S20-S1a S20-S1b
-                    S79-S1a S79-S1b      ))
+(def pcaM    (memoize PCA-matrix))
+(def samples [S05-Pa
+              S19-Pb  S19-Pc  S19-Pd
+              S20-Pa  S20-Pb  S20-Pc
+              S79-Pa  S79-Pb
+              S05-M   S79-M
+              S19-S1a
+              S20-S1a S20-S1b
+              S79-S1a S79-S1b])
+
 
 (defn save-mat [pcaM file-out]
-  "/home/yosh/datafiles/incanted_files"
+  "/home/yosh/datafiles/incanted_files/SVD15.inc"
   (with-open [f-out (io/writer file_out)]
     (csv/write-csv f-out [(map name (i/col-names pcaM))])
-        (csv/write-csv f-out (i/to-list pcaM))))
+    (csv/write-csv f-out (i/to-list pcaM))))
 
+
+(defn get-mat [file]
+  "open an csv.inc file"
+  (ii/read-dataset file :header true))
+(def m-get-set (memoize get-set))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;Dimention reduction analysis
+;;Dimention reduction analysis
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn le-filter [file] 
+(defn clean-low [file]
+  "cleans low"
+  (->> file
+       (i/$where (i/$fn [pi] (> pi 0.0)))
+       (i/add-derived-column
+        :var-num
+        [:cov :minfr]
+        #(* %1 %2))))
+
+
+
+(defn le-filter [file]
   (->> file
        (i/$where (i/$fn [depth1  depth2  depth3  depth4
                          depth5  depth6  depth7  depth8
@@ -208,14 +184,14 @@
                          depth5  depth6  depth7  depth8
                          depth9  depth10 depth11 depth12
                          depth13 depth14 depth15 depth16]
-                        (and (> depth1  20.0 ) (> depth2  20.0 )
-                             (> depth3  20.0 ) (> depth4  20.0 )
-                             (> depth5  20.0 ) (> depth6  20.0 )
-                             (> depth7  20.0 ) (> depth8  20.0 )
-                             (> depth9  20.0 ) (> depth10 20.0 )
-                             (> depth11 20.0 ) (> depth12 20.0 )
-                             (> depth13 20.0 ) (> depth14 20.0 )
-                             (> depth15 20.0 ) (> depth16 20.0 )))) 
+                        (and (> depth1  20.0) (> depth2  20.0)
+                             (> depth3  20.0) (> depth4  20.0)
+                             (> depth5  20.0) (> depth6  20.0)
+                             (> depth7  20.0) (> depth8  20.0)
+                             (> depth9  20.0) (> depth10 20.0)
+                             (> depth11 20.0) (> depth12 20.0)
+                             (> depth13 20.0) (> depth14 20.0)
+                             (> depth15 20.0) (> depth16 20.0))))
        (i/$ [:minfr1  :minfr2  :minfr3  :minfr4
              :minfr5  :minfr6  :minfr7  :minfr8
              :minfr9  :minfr10 :minfr11 :minfr12
@@ -237,7 +213,7 @@
   (let [dataset  (i/$ (range from1 to1) :all (le-filter file))
         old_cols (i/col-names dataset)
         new_cols (vec (map #(keyword (subs (str % "z") 1))
-                            old_cols))]
+                           old_cols))]
     (->> old_cols
          (reduce #(normalize->mean-zero %2 %1) dataset)
          (i/$ new_cols))))
@@ -271,18 +247,18 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn SNPxs [file]
   (let [data       (->> file
-                        PCA-filter 
+                        le-filter
                         i/to-matrix
-                        i/transpose)
+                        i/trans)
         components (st/principal-components data)
         pc1        (i/$ 0 (:rotation components))]
     (i/mmult data pc1)))
 
 (defn SNPys [file]
   (let [data       (->> file
-                        PCA-filter
+                        le-filter
                         i/to-matrix
-                        i/transpose)
+                        i/trans)
         components (st/principal-components data)
         pc2        (i/$ 1 (:rotation components))]
     (i/mmult data pc2)))
@@ -302,3 +278,9 @@
       (c/add-points (i/$  (range 13 14) 0 xs)
                     (i/$  (range 13 14) 0 ys))
       (i/view)))
+
+(def h (PCA-matrix [(i/$ (range 0 1000) :all S19-Pb)
+                    (i/$ (range 0 1000) :all S19-Pc)
+                    (i/$ (range 0 1000) :all S19-Pc)]))
+
+
