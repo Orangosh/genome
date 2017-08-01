@@ -44,6 +44,27 @@
 (def L79-S1a (str home "579-S1a.inc"))
 (def L79-S1b (str home "579-S1b.inc"))
 
+(defn bm-loc []
+  (def L1  (str home "S1.inc"  ))
+  (def L10 (str home "S10.inc" ))
+  (def L11 (str home "S11.inc" ))
+  (def L12 (str home "S12.inc" ))
+  (def L13 (str home "S13.inc" ))
+  (def L14 (str home "S14.inc" ))
+  (def L15 (str home "S15.inc" ))
+  (def L16 (str home "S16.inc" ))
+  (def L17 (str home "S17.inc" ))
+  (def L18 (str home "S18.inc" ))
+  (def L23 (str home "S23.inc" ))
+  (def L24 (str home "S24.inc" ))
+  (def L25 (str home "S25.inc" ))
+  (def L26 (str home "S26.inc" ))
+  (def L27 (str home "S27.inc" ))
+  (def L28 (str home "S28.inc" ))
+  (def L29 (str home "S29.inc" ))
+  (def L30 (str home "S30.inc" ))
+  (def L9  (str home "S9.inc"  )))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET SET
@@ -75,6 +96,30 @@
 (def S79-M   (m-get-set L79-M   0))
 (def S79-S1a (m-get-set L79-S1a 0))
 (def S79-S1b (m-get-set L79-S1b 0))
+
+(defn bm-sets []
+  (def S1  (m-get-set L1  0))
+  (def S10 (m-get-set L10 0))
+
+  (def S11 (m-get-set L11 0))
+  (def S12 (m-get-set L12 0))
+  (def S13 (m-get-set L13 0))
+  (def S14 (m-get-set L14 0))
+
+  (def S15 (m-get-set L15 0))
+  (def S16 (m-get-set L16 0))
+  (def S17 (m-get-set L17 0))
+  (def S18 (m-get-set L18 0)) 
+  (def S23 (m-get-set L23 0))
+  
+  (def S24 (m-get-set L24 0))
+  (def S25 (m-get-set L25 0))
+  (def S26 (m-get-set L26 0))
+  (def S27 (m-get-set L27 0))
+  (def S28 (m-get-set L28 0))
+  (def S29 (m-get-set L29 0))
+  (def S30 (m-get-set L30 0))
+  (def S9  (m-get-set L9  0)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
