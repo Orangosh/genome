@@ -5,7 +5,7 @@
            [incanter.stats    :as st ]
            [incanter.charts   :as c  ]
            [genome.dna2aa     :as da ]
-           [genome.stats      :as gs ]           
+           [genome.stats      :as gs ]
            [genome.consvar    :as cv ]
            [genome.pop        :as p  ]
            [clojure.data.csv  :as csv]
@@ -43,7 +43,23 @@
   (def L28 (str home "S28.inc" ))
   (def L29 (str home "S29.inc" ))
   (def L30 (str home "S30.inc" ))
-  (def L9  (str home "S9.inc"  )))
+  (def L9  (str home "S9.inc"  ))
+  (def L05-Pa  (str home "505-Pa.inc" ))
+  (def L05-M   (str home "505-M.inc"  ))
+  (def L19-Pb  (str home "519-Pb.inc" ))
+  (def L19-Pc  (str home "519-Pc.inc" ))
+  (def L19-Pd  (str home "519-Pd.inc" ))
+  (def L19-S1a (str home "519-S1a.inc"))
+  (def L20-Pa  (str home "520-Pa.inc" ))
+  (def L20-Pb  (str home "520-Pb.inc" ))
+  (def L20-Pc  (str home "520-Pc.inc" ))
+  (def L20-S1  (str home "520-S1.inc" ))
+  (def L20-S1a (str home "520-S1a.inc"))
+  (def L79-Pa  (str home "579-Pa.inc" ))
+  (def L79-Pb  (str home "579-Pb.inc" ))
+  (def L79-M   (str home "579-M.inc"  ))
+  (def L79-S1a (str home "579-S1a.inc"))
+  (def L79-S1b (str home "579-S1b.inc")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET SET
@@ -68,9 +84,9 @@
   (def S15 (m-get-set L15 0))
   (def S16 (m-get-set L16 0))
   (def S17 (m-get-set L17 0))
-  (def S18 (m-get-set L18 0)) 
+  (def S18 (m-get-set L18 0))
   (def S23 (m-get-set L23 0))
-  
+
   (def S24 (m-get-set L24 0))
   (def S25 (m-get-set L25 0))
   (def S26 (m-get-set L26 0))
@@ -79,6 +95,91 @@
   (def S29 (m-get-set L29 0))
   (def S30 (m-get-set L30 0))
   (def S9  (m-get-set L9  0)))
+
+(defn look
+  "create a graph of the value comparison"
+  ([column file]
+   (i/view (c/xy-plot
+            :loc
+            column
+            :x-label "frequency"
+            :y-label "Location"
+            :title   "Change in nucelotide diversity per site between 2 samples"
+;:legend true
+            :data file)))
+
+  ([column early>inter early>late]
+   (-> (c/xy-plot
+        :loc
+        column
+        :x-label "frequency"
+        :y-label "Location"
+        :title   "Change in nucelotide diversity per site between 2 samples"
+        :data early>inter)
+       (c/add-lines
+        :loc
+        column
+        :data early>late)
+       (i/view)))
+
+  ([column early>inter early>late early>mom_sib]
+    (-> (c/xy-plot
+         :loc
+         column
+         :x-label "frequency"
+         :y-label "Location"
+         :title   "Change in nucelotide diversity per site between 2 samples"
+         :data early>inter)
+        (c/add-lines
+         :loc
+         column
+         :data early>late)
+        (c/add-lines
+         :loc
+         column
+         :data early>mom_sib)
+        (i/view)))
+
+  ([column file1 file2 file3 file4 file5 file6]
+    (-> (c/xy-plot
+         :loc
+         column
+         :x-label "frequency"
+         :y-label "Location"
+         :title   "Change in nucelotide diversity per site between 2 samples"
+         :data file1)
+        (c/add-lines
+         :loc
+         column
+         :data file2)
+        (c/add-lines
+         :loc
+         column
+         :data file3)
+        (c/add-lines
+         :loc
+         column
+         :data file4)
+        (c/add-lines
+         :loc
+         column
+         :data file5)
+        (c/add-lines
+         :loc
+         column
+         :data file6)
+        (i/view))))
+
+
+
+
+
+(defn win-100 [file]
+  (p/m-slide-mean file :pi :pi_slide 100))
+(def W19-Pb  (win-100 (m-get-set L19-Pb  20)))
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gneral description
@@ -152,4 +253,3 @@
         #(if (> (i/nrow %) 0) (p/bin-sfs 10 (da/get-synonymous %)) 0))
        (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div :sample :cov>20 :sfs])))
 (def p-samples (memoize samples))
-
