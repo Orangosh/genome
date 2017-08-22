@@ -141,9 +141,8 @@
   (let [renamed (->> samples
                      (map #(merge-prep %))
                      (map #(i/rename-cols (c-rename %2 %1) %2) (iterate inc 1)))
-        renamed (first renamed)
         enamed  (rest  renamed)]
-    (->> r
+    (->> renamed
          (reduce #(i/$join [:loc :loc] %1 %2) (map enamed))
          (i/$where {:pi1 {:$ne nil}}))))
     (def p-unite (memoize unite))
