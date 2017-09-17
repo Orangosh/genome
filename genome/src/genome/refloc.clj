@@ -44,7 +44,7 @@
         ref     (i/$ :merlin file)
         ref_loc (get-loc-vec ref [] 1)]
     (->> (i/add-column :ref-loc ref_loc file)
-         (i/add-column :loc (range (i/nrow file))))))
+         (i/add-column :loc (range 1 (+ 1 (i/nrow file)))))))
     (def m-add-count-cols (memoize add-count-cols))
 
 (defn refer-ann [refset file]

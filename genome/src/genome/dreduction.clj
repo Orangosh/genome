@@ -171,9 +171,9 @@
               S28 S29 S30
               S9])
 #_ (def mat
-     (bm-loc)
-     (bm-sets)
-     (pcaM samples))
+     ((bm-loc)
+      (bm-sets)
+      (pcaM samples)))
 
 (defn save-mat [pcaM file-out]
   "/home/yosh/datafiles/incanted_files/SVD15.inc"
