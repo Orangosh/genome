@@ -21,28 +21,28 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; For Server
-(def home "/mnt/data/datafiles/incanted_files/")
+(def home "/mnt/data/")
 
+(defn hcmv-loc []
+  (def L05-Pa  (str home "hcmv/incanted_files/505-Pa.inc" ))
+  (def L05-M   (str home "hcmv/incanted_files/505-M.inc"  ))
 
-(def L05-Pa  (str home "505-Pa.inc" ))
-(def L05-M   (str home "505-M.inc"  ))
+  (def L19-Pb  (str home "hcmv/incanted_files/519-Pb.inc" ))
+  (def L19-Pc  (str home "hcmv/incanted_files/519-Pc.inc" ))
+  (def L19-Pd  (str home "hcmv/incanted_files/519-Pd.inc" ))
+  (def L19-S1a (str home "hcmv/incanted_files/519-S1a.inc"))
 
-(def L19-Pb  (str home "519-Pb.inc" ))
-(def L19-Pc  (str home "519-Pc.inc" ))
-(def L19-Pd  (str home "519-Pd.inc" ))
-(def L19-S1a (str home "519-S1a.inc"))
+  (def L20-Pa  (str home "hcmv/incanted_files/520-Pa.inc" ))
+  (def L20-Pb  (str home "hcmv/incanted_files/520-Pb.inc" ))
+  (def L20-Pc  (str home "hcmv/incanted_files/520-Pc.inc" ))
+  (def L20-S1  (str home "hcmv/incanted_files/520-S1a.inc"))
+  (def L20-S1a (str home "hcmv/incanted_files/520-S1b.inc"))
 
-(def L20-Pa  (str home "520-Pa.inc" ))
-(def L20-Pb  (str home "520-Pb.inc" ))
-(def L20-Pc  (str home "520-Pc.inc" ))
-(def L20-S1  (str home "520-S1.inc" )) 
-(def L20-S1a (str home "520-S1a.inc"))
-  
-(def L79-Pa  (str home "579-Pa.inc" ))
-(def L79-Pb  (str home "579-Pb.inc" ))
-(def L79-M   (str home "579-M.inc"  ))
-(def L79-S1a (str home "579-S1a.inc"))
-(def L79-S1b (str home "579-S1b.inc"))
+  (def L79-Pa  (str home "hcmv/incanted_files/579-Pa.inc" ))
+  (def L79-Pb  (str home "hcmv/incanted_files/579-Pb.inc" ))
+  (def L79-M   (str home "hcmv/incanted_files/579-M.inc"  ))
+  (def L79-S1a (str home "hcmv/incanted_files/579-S1a.inc"))
+  (def L79-S1b (str home "hcmv/incanted_files/579-S1b.inc")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;GET SET
@@ -55,26 +55,165 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn les-sets [])
-(def S05-Pa  (m-get-set L05-Pa  0))
-(def S05-M   (m-get-set L05-M   0))
+(defn hcmv-sets []
+  (hcmv-loc)
+  (def S05-Pa  (m-get-set L05-Pa  0))
+  (def S05-M   (m-get-set L05-M   0))
 
-(def S19-Pb  (m-get-set L19-Pb  0))
-(def S19-Pc  (m-get-set L19-Pc  0))
-(def S19-Pd  (m-get-set L19-Pd  0))
-(def S19-S1a (m-get-set L19-S1a 0))
+  (def S19-Pb  (m-get-set L19-Pb  0))
+  (def S19-Pc  (m-get-set L19-Pc  0))
+  (def S19-Pd  (m-get-set L19-Pd  0))
+  (def S19-S1a (m-get-set L19-S1a 0))
 
-(def S20-Pa  (m-get-set L20-Pa  0))
-(def S20-Pb  (m-get-set L20-Pb  0))
-(def S20-Pc  (m-get-set L20-Pc  0))
-(def S20-S1a (m-get-set L20-S1a 0)) 
-(def S20-S1b (m-get-set L20-S1  0))
+  (def S20-Pa  (m-get-set L20-Pa  0))
+  (def S20-Pb  (m-get-set L20-Pb  0))
+  (def S20-Pc  (m-get-set L20-Pc  0))
+  (def S20-S1a (m-get-set L20-S1a 0)) 
+  (def S20-S1b (m-get-set L20-S1  0))
   
-(def S79-Pa  (m-get-set L79-Pa  0))
-(def S79-Pb  (m-get-set L79-Pb  0))
-(def S79-M   (m-get-set L79-M   0))
-(def S79-S1a (m-get-set L79-S1a 0))
-(def S79-S1b (m-get-set L79-S1b 0))
+  (def S79-Pa  (m-get-set L79-Pa  0))
+  (def S79-Pb  (m-get-set L79-Pb  0))
+  (def S79-M   (m-get-set L79-M   0))
+  (def S79-S1a (m-get-set L79-S1a 0))
+  (def S79-S1b (m-get-set L79-S1b 0)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;FOR PCA
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def samples [S05-Pa
+              S19-Pb  S19-Pc  S19-Pd
+              S20-Pa  S20-Pb  S20-Pc
+              S79-Pa  S79-Pb
+              S05-M   S79-M
+              S19-S1a
+              S20-S1a S20-S1b
+              S79-S1a S79-S1b])
+#_(def mat
+    (genome.dreduction/pcaM samples))
+
+
+(defn le-filter [file & {:keys [m d]
+                          :or   {m 0.01
+                                 d 35.0}}]
+  (->> file
+       (i/$where (i/$fn
+                  [depth1
+                   depth2  depth3  depth4
+                   depth5  depth6  depth7
+                   depth8  depth9
+                   depth10 depth11
+                   depth12
+                   depth13 depth14
+                   depth15 depth16]
+                  (and (not= nil depth1)
+                       (not= nil depth2)  (not= nil depth3)  (not= nil depth4)
+                       (not= nil depth5)  (not= nil depth6)  (not= nil depth7)
+                       (not= nil depth8)  (not= nil depth9)
+                       (not= nil depth10) (not= nil depth11)
+                       (not= nil depth12)
+                       (not= nil depth13) (not= nil depth14)
+                       (not= nil depth15) (not= nil depth16))))
+       (i/$where (i/$fn
+                  [minfr1
+                   minfr2  minfr3  minfr4
+                   minfr5  minfr6  minfr7
+                   minfr8  minfr9
+                   minfr10 minfr11
+                   minfr12
+                   minfr13 minfr14
+                   minfr15 minfr16]
+                  (or  (> minfr1 m)
+                       (> minfr2 m)  (> minfr3 m)  (> minfr4 m)
+                       (> minfr5 m)  (> minfr6 m)  (> minfr7 m)
+                       (> minfr8 m)  (> minfr9 m)
+                       (> minfr10 m) (> minfr11 m)
+                       (> minfr12 m)
+                       (> minfr13 m) (> minfr14 m)
+                       (> minfr15 m) (> minfr16 m))))
+       (i/$where (i/$fn
+                  [depth1
+                   depth2  depth3  depth4
+                   depth5  depth6  depth7
+                   depth8  depth9
+                   depth10 depth11
+                   depth12
+                   depth13 depth14
+                   depth15 depth16]
+                  (and (> depth1  d)
+                       (> depth2  d) (> depth3  d) (> depth4  d)
+                       (> depth5  d) (> depth6  d) (> depth7  d)
+                       (> depth8  d) (> depth9  d)
+                       (> depth10 d) (> depth11 d)
+                       (> depth12 d)
+                       (> depth13 d) (> depth14 d)
+                       (> depth15 d) (> depth16 d)
+                       )))
+       (i/$ [:minfr1
+             :minfr2  :minfr3  :minfr4
+             :minfr5  :minfr6  :minfr7
+             :minfr8  :minfr9
+             :minfr10 :minfr11
+             :minfr12
+             :minfr13 :minfr14
+             :minfr15 :minfr16
+             ])))
+
+
+(defn CMV-SVD-primary [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 1 2 3 4 5 6 7 8 9] 0 projection)
+                        (i/$ [0 1 2 3 4 5 6 7 8 9] 1 projection)
+                        :title "CMV primary vs mother sibling"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ (range 9 11)  0 projection)
+                      (i/$ (range 9 11)  1 projection))
+        (c/add-points (i/$ (range 11 16) 0 projection)
+                      (i/$ (range 11 16) 1 projection))
+                (i/view))))
+
+
+(defn CMV-SVD-family [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 9] 0 projection)
+                        (i/$ [0 9] 1 projection)
+                        :title "CMV families"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ [1 2 3 11]  0 projection)
+                      (i/$ [1 2 3 11]  1 projection))
+        (c/add-points (i/$ [4 5 6 12 13] 0 projection)
+                      (i/$ [4 5 6 12 13] 1 projection))
+        (c/add-points (i/$ [7 8 10 14 15] 0 projection)
+                      (i/$ [7 8 10 14 15] 1 projection))
+                (i/view))))
+
+(defn CMV-SVD-depth [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 1 5 8 15] 0 projection)
+                        (i/$ [0 1 5 8 15] 1 projection)
+                        :title "CMV depth"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ [2 4 6 7 14]  0 projection)
+                      (i/$ [2 4 6 7 14]  1 projection))
+        (c/add-points (i/$ [3 11 12 13 10] 0 projection)
+                      (i/$ [3 11 12 13 10] 1 projection))
+        (c/add-points (i/$ [9] 0 projection)
+                      (i/$ [9] 1 projection))
+                (i/view))))
+
+
+
+
+
+
+
+
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gneral description
@@ -97,6 +236,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Samples dataset
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn samples []
   (->> (i/dataset

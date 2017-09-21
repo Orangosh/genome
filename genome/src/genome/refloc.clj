@@ -10,21 +10,9 @@
            [clojure.data.csv  :as csv]))
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;TESTING PIPELINE
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- 
-(defn get-conset[fasta_file]
-  "/home/yosh/datafiles/Consensus/CMVconsensus/exphcmv.fasta"
-  (let [fasta (with-open [rdr (clojure.java.io/reader fasta_file)]
-                (reduce conj [] (line-seq rdr)))
-        temp  (apply i/conj-cols (take-nth 2 (rest (map vec fasta))))]
-    (->> (i/rename-cols (zipmap (i/col-names temp)
-                                (vec (map keyword
-                                          (map #(subs % 4)
-                                               (take-nth 2 fasta)))))
-                        temp)
-         (i/rename-cols {:lin :merlin}))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; This one takes only the consensus sequence from the multiple alingment
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-loc-vec [ref loc-vec loc]
   (if (< 0 (count ref))
@@ -39,25 +27,21 @@
 
 (def m-get-loc-vec (memoize get-loc-vec))
 
-(defn add-count-cols [fasta_file]
-  (let [file    (get-conset fasta_file)
-        ref     (i/$ :merlin file)
-        ref_loc (get-loc-vec ref [] 1)]
-    (->> (i/add-column :ref-loc ref_loc file)
-         (i/add-column :loc (range 1 (+ 1 (i/nrow file)))))))
-    (def m-add-count-cols (memoize add-count-cols))
+(defn get-refinc[fasta_file]
+  "/home/yosh/datafiles/Consensus/CMVconsensus/exphcmv.fasta"
+  (let [ fasta (with-open [rdr (clojure.java.io/reader fasta_file)]
+                 (reduce conj [] (line-seq rdr)))
+        ref-name (first fasta)
+        ref-seq  (second fasta)
+        ref-loc  (get-loc-vec ref-seq [] 1)
+        ]
+    (->> (i/conj-cols (vec ref-seq) (vec (range 1 (+ 1 (count ref-seq)))) ref-loc)
+         (i/rename-cols {:col-0 :ref-seq :col-1 :loc :col-2 :ref-loc} ))))
+
+(def m-get-refinc (memoize get-refinc))
 
 (defn refer-ann [refset file]
-  (let [ann_ref (->> (ii/read-dataset refset :header true)
-                     (i/$ [:merlin :loc :ref-loc]))]
-    (i/$join [:loc :loc] ann_ref file))) ;; add conloc
-
-(defn make-refile [fasta_file file_out]
-  "/home/yosh/datafiles/Consensus/CMVconsensus/exphcmv.fasta &
-   /home/yosh/datafiles/Consensus/CMVconsensus/refset.inc"
-  (let [refile    (m-add-count-cols fasta_file)
-        refinc    file_out]
-    (with-open [f-out (io/writer refinc)]
-      (csv/write-csv f-out [(map name (i/col-names refile))])
-      (csv/write-csv f-out (i/to-list refile)))))
-
+  "/mnt/data/ebv/consensus/ebv-ref-NC_007605.1.fasta"
+  (let [ann_ref (m-get-refinc refset)]
+    (i/$join [:loc :loc] ann_ref file)))
+ 
