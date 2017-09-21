@@ -165,3 +165,43 @@
              :minfr13 :minfr14
              :minfr15 :minfr16
              :minfr17 :minfr18 :minfr19])))
+
+(defn HHV6-SVD-primary [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 1 2 8 9 10 14 18] 0 projection)
+                        (i/$ [0 1 2 8 9 10 14 18] 1 projection)
+                        :title "HHV6 primary vs mother vs sibling"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ [3 4 5 11 12 13 15 16]  0 projection)
+                      (i/$ [3 4 5 11 12 13 15 16]  1 projection))
+        (c/add-points (i/$ [6 7 17] 0 projection)
+                      (i/$ [6 7 17] 1 projection))
+        (i/view))))
+
+
+(defn HHV6-SVD-family [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 1 2 3 4 5] 0 projection)
+                        (i/$ [0 1 2 3 4 5] 1 projection)
+                        :title "hhv6 family"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ [6 7 8 9 10 11 12 13]  0 projection)
+                      (i/$ [6 7 8 9 10 11 12 13]  1 projection))
+        (c/add-points (i/$ [14 15 16] 0 projection)
+                      (i/$ [14 15 16] 1 projection))
+        (c/add-points (i/$ [17 18] 0 projection)
+                      (i/$ [17 18] 1 projection))
+        (i/view))))
+
+(defn HHV6-SVD-depth [file]
+  (let [projection (->> (ii/read-dataset file :header false) i/to-matrix)]
+    (-> (c/scatter-plot (i/$ [0 1 2 9 10 14 15 16] 0 projection)
+                        (i/$ [0 1 2 9 10 14 15 16] 1 projection)
+                        :title "hhv6 depth"
+                        :x-label "Dimension 1"
+                        :y-label "Dimension 2")
+        (c/add-points (i/$ [3 4 5 6 7 8 11 12 17 18]  0 projection)
+                      (i/$ [3 4 5 6 7 8 11 12 17 18]  1 projection))
+        (i/view))))
