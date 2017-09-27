@@ -1,4 +1,4 @@
-(ns genome.analyze
+(ns genome.spec.hcmv
   (require [clojure.java.io   :as io ]
            [incanter.core     :as i  ]
            [incanter.io       :as ii ]
@@ -77,6 +77,29 @@
   (def S79-S1a (m-get-set L79-S1a 0))
   (def S79-S1b (m-get-set L79-S1b 0)))
 
+
+(defn get_samples []
+  (hcmv-loc)
+  (def samples {S05-Pa  (m-get-set L05-Pa  0)
+                S05-M   (m-get-set L05-M   0)
+
+                S19-Pb  (m-get-set L19-Pb  0)
+                S19-Pc  (m-get-set L19-Pc  0)
+                S19-Pd  (m-get-set L19-Pd  0)
+                S19-S1a (m-get-set L19-S1a 0)
+
+                S20-Pa  (m-get-set L20-Pa  0)
+                S20-Pb  (m-get-set L20-Pb  0)
+                S20-Pc  (m-get-set L20-Pc  0)
+                S20-S1a (m-get-set L20-S1a 0) 
+                S20-S1b (m-get-set L20-S1  0)
+                
+                S79-Pa  (m-get-set L79-Pa  0)
+                S79-Pb  (m-get-set L79-Pb  0)
+                S79-M   (m-get-set L79-M   0)
+                S79-S1a (m-get-set L79-S1a 0)
+                S79-S1b (m-get-set L79-S1b 0)}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -93,8 +116,9 @@
     (genome.dreduction/pcaM samples))
 
 
+
 (defn le-filter [file & {:keys [m d]
-                          :or   {m 0.01
+                          :or   {m 0.05
                                  d 35.0}}]
   (->> file
        (i/$where (i/$fn
@@ -115,22 +139,22 @@
                        (not= nil depth13) (not= nil depth14)
                        (not= nil depth15) (not= nil depth16))))
        (i/$where (i/$fn
-                  [minfr1
-                   minfr2  minfr3  minfr4
-                   minfr5  minfr6  minfr7
-                   minfr8  minfr9
-                   minfr10 minfr11
-                   minfr12
-                   minfr13 minfr14
-                   minfr15 minfr16]
-                  (or  (> minfr1 m)
-                       (> minfr2 m)  (> minfr3 m)  (> minfr4 m)
-                       (> minfr5 m)  (> minfr6 m)  (> minfr7 m)
-                       (> minfr8 m)  (> minfr9 m)
-                       (> minfr10 m) (> minfr11 m)
-                       (> minfr12 m)
-                       (> minfr13 m) (> minfr14 m)
-                       (> minfr15 m) (> minfr16 m))))
+                  [mf1
+                   mf2  mf3  mf4
+                   mf5  mf6  mf7
+                   mf8  mf9
+                   mf10 mf11
+                   mf12
+                   mf13 mf14
+                   mf15 mf16]
+                  (or  (> mf1 m)
+                       (> mf2 m)  (> mf3 m)  (> mf4 m)
+                       (> mf5 m)  (> mf6 m)  (> mf7 m)
+                       (> mf8 m)  (> mf9 m)
+                       (> mf10 m) (> mf11 m)
+                       (> mf12 m)
+                       (> mf13 m) (> mf14 m)
+                       (> mf15 m) (> mf16 m))))
        (i/$where (i/$fn
                   [depth1
                    depth2  depth3  depth4
@@ -149,14 +173,14 @@
                        (> depth13 d) (> depth14 d)
                        (> depth15 d) (> depth16 d)
                        )))
-       (i/$ [:minfr1
-             :minfr2  :minfr3  :minfr4
-             :minfr5  :minfr6  :minfr7
-             :minfr8  :minfr9
-             :minfr10 :minfr11
-             :minfr12
-             :minfr13 :minfr14
-             :minfr15 :minfr16
+       (i/$ [:mf1
+             :mf2  :mf3  :mf4
+             :mf5  :mf6  :mf7
+             :mf8  :mf9
+             :mf10 :mf11
+             :mf12
+             :mf13 :mf14
+             :mf15 :mf16
              ])))
 
 

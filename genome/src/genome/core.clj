@@ -66,8 +66,7 @@
   (println "adding consensus amino acids")
   (def min_aa      (da/nuc>aa :min+ :min- maj_aa))  
 
-  (def scrubed2 (i/$ [:r_seq
-                      :merlin :ref-loc
+  (def scrubed2 (i/$ [:r_seq :ncbi   :ref-loc
                       :gfwd+ :gbwd+  :gfwd-   :gbwd-
                       :CDS+  :CDS-   :exon-   :exon+
                       :ref   :loc    :maj_un+

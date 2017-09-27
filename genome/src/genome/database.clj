@@ -53,70 +53,52 @@
         [:ref :snap]
          #(merge-all col_name %1 %2))))
 
-(defn unite [col_var col_ref col_name pile_set]
+(defn unite [col_fwd col_bwd col_name strand_filter pile_set]
+  "stand_filter- number 0-1- ignores variants that are (90% default) dominant
+0.0 means no filter"
                 (->> pile_set
                      (i/add-derived-column
                       col_name
-                      [col_var col_ref] +)))
+                      [col_fwd col_bwd]
+                      #(if (and (< 0.0 %1) (< 0.0 %2))
+                         (if (and (> (double (/ %1 %2)) strand_filter)
+                                  (> (double (/ %2 %1)) strand_filter))
+                           (+ %1 %2)
+                           0)
+                         0))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;OPPORATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn create-db [file]
-  (println "Opening a TSV file") 
-  (def pileup (ii/read-dataset file :header false :delim \tab))
-  ; "/home/yosh/datafiles/02-519-Pb_CMV_S18whole/output/mpuf"
-
-  (println "Renameing colums")
-  (def renamed (i/rename-cols
-                {:col0     :r_seq
-                 :col1     :loc
-                 :col2     :ref
-                 :col3     :cov
-                 :col4     :reads
-                 :col5     :qual}
-                pileup))
-  
-  (println "Separating-snp")
-  (def  seperated-snp (->> renamed
-                           (i/add-derived-column
-                            :SNPs
-                            [:reads]
-                            #(sep-snp %))))
-  
-  (def scrubed
-    (->> seperated-snp
-         (i/$ [:r_seq :loc :ref :cov :SNPs])))
-  
-  (println "Adds column of nuc")
-  (def mapped 
-    (->> scrubed
-         (i/add-derived-column
-          :snap
+(defn create-db [file & {:keys [strand_filter]
+                         :or {strand_filter 0.0}}]
+  (let [nucleotides [\A \a \T \t \C \c \G \g \*]]
+    (->> (ii/read-dataset file :header false :delim \tab)
+         (i/rename-cols
+          {:col0 :r_seq
+           :col1 :loc
+           :col2 :ref
+           :col3 :cov
+           :col4 :reads
+           :col5 :qual})
+         (i/add-derived-column :SNPs
+          [:reads]
+          #(sep-snp %))
+         (i/add-derived-column :snap
           [:SNPs]
-          #(create-map %1))))
+          #(create-map %))
+         (add-col \A) (add-col \a)
+         (add-col \T) (add-col \t)
+         (add-col \C) (add-col \c)
+         (add-col \G) (add-col \g)
+         (add-col \*)
+         (unite \A \a :Aun strand_filter)
+         (unite \T \t :Tun strand_filter)
+         (unite \C \c :Cun strand_filter)
+         (unite \G \g :Gun strand_filter)
+         (i/$ (vec (flatten [:r_seq :loc :ref  :cov
+                             :Aun  :Tun  :Cun  :Gun
+                             nucleotides]))))))
 
-  (def mapped2
-    (->> mapped
-         (i/$ [:r_seq :loc :ref :cov :snap])))
-
-  (def collumned (->> mapped2
-                   (add-col \A) (add-col \a)
-                   (add-col \T) (add-col \t)
-                   (add-col \C) (add-col \c)
-                   (add-col \G) (add-col \g)
-                   (add-col \*)))
-
-  (println "Joining columns")
-  (def reunited
-    (->> (unite \A \a :Aun collumned)
-         (unite \T \t :Tun)
-         (unite \C \c :Cun)
-         (unite \G \g :Gun))) 
-
-
-  (def finalized
-    (->> reunited
-         (i/$ [:r_seq :loc :ref :cov :Aun :Tun :Cun :Gun ]))))

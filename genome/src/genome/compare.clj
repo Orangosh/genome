@@ -13,70 +13,8 @@
            [genome.dna2aa     :as da ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;DEFINE FILE LOCATIONS
+;DEFINE FILE LOCATIONS- needs one of the specs files
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;
-;; For PC
-;;(def home "/home/yosh/datafiles/incanted_files/")
-
-;;;;;;;;;;;;;;;;;;;;;;;
-;; For Server
-(def home "/mnt/data/datafiles/incanted_files/")
-
-
-(def L05-Pa  (str home "505-Pa.inc" ))
-(def L05-M   (str home "505-M.inc"  ))
-
-(def L19-Pb  (str home "519-Pb.inc" ))
-(def L19-Pc  (str home "519-Pc.inc" ))
-(def L19-Pd  (str home "519-Pd.inc" ))
-(def L19-S1a (str home "519-S1a.inc"))
-
-(def L20-Pa  (str home "520-Pa.inc" ))
-(def L20-Pb  (str home "520-Pb.inc" ))
-(def L20-Pc  (str home "520-Pc.inc" ))
-(def L20-S1  (str home "520-S1.inc" )) 
-(def L20-S1a (str home "520-S1a.inc"))
-  
-(def L79-Pa  (str home "579-Pa.inc" ))
-(def L79-Pb  (str home "579-Pb.inc" ))
-(def L79-M   (str home "579-M.inc"  ))
-(def L79-S1a (str home "579-S1a.inc"))
-(def L79-S1b (str home "579-S1b.inc"))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;GET SET
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-set [file cov]
-  "open an csv.inc file"
-  (->> (ii/read-dataset file :header true)
-       (i/$where (i/$fn [depth] (< cov depth)))))
-(def m-get-set (memoize get-set))
-
-(defn les-sets [])
-(def S05-Pa  (m-get-set L05-Pa  0))
-(def S05-M   (m-get-set L05-M   0))
-
-(def S19-Pb  (m-get-set L19-Pb  0))
-(def S19-Pc  (m-get-set L19-Pc  0))
-(def S19-Pd  (m-get-set L19-Pd  0))
-(def S19-S1a (m-get-set L19-S1a 0))
-
-(def S20-Pa  (m-get-set L20-Pa  0))
-(def S20-Pb  (m-get-set L20-Pb  0))
-(def S20-Pc  (m-get-set L20-Pc  0))
-(def S20-S1a (m-get-set L20-S1a 0)) 
-(def S20-S1b (m-get-set L20-S1  0))
-  
-(def S79-Pa  (m-get-set L79-Pa  0))
-(def S79-Pb  (m-get-set L79-Pb  0))
-(def S79-M   (m-get-set L79-M   0))
-(def S79-S1a (m-get-set L79-S1a 0))
-(def S79-S1b (m-get-set L79-S1b 0))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING SNP TREND

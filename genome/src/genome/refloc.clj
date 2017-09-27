@@ -36,7 +36,7 @@
         ref-loc  (get-loc-vec ref-seq [] 1)
         ]
     (->> (i/conj-cols (vec ref-seq) (vec (range 1 (+ 1 (count ref-seq)))) ref-loc)
-         (i/rename-cols {:col-0 :ref-seq :col-1 :loc :col-2 :ref-loc} ))))
+         (i/rename-cols {:col-0 :ncbi :col-1 :loc :col-2 :ref-loc} ))))
 
 (def m-get-refinc (memoize get-refinc))
 

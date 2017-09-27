@@ -34,34 +34,30 @@
          (interleave old-cols)
          (apply assoc {}))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Reduce
 
 (defn PCA-matrix [samples]
   (let [renamed (->> samples
-                     (map #(add-row (i/$ [:loc :pi :minfr :depth] %)))
+                     (map #(add-row (i/$ [:loc :pi :mf :depth] %)))
                      (map #(i/rename-cols (c-rename %2 %1) %2) (iterate inc 1)))
         enamed  (rest  renamed)]
     (->> renamed
          (reduce #(i/$join [:loc :loc] %1 %2) (map enamed))
          (i/$where {:pi1 {:$ne nil}}))))
 
+(defn zero-fr [m file]
+  "create a new collumnt for one dataset with freq > m"
+  (->> file
+       (i/add-derived-column
+        :mf
+        [:minfr]
+        #(if (> m  %) 0.0 %))))
 
-(def pcaM    (memoize PCA-matrix))
+(defn get-zerowed-fr [m samples]
+  (PCA-matrix (map #(zero-fr m %) samples)))
 
-(defn save-mat [pcaM file-out]
-  "/home/yosh/datafiles/incanted_files/SVD15.inc"
-  (with-open [f-out (io/writer file-out)]
-    (csv/write-csv f-out [(map name (i/col-names pcaM))])
-    (csv/write-csv f-out (i/to-list pcaM))))
-
-
-(defn get-mat [file]
-  "open an csv.inc file"
-  (ii/read-dataset file :header true))
-(def m-get-mat (memoize get-mat))
-
+#_(def mat (get-zerowed-fr 0.05 samples))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Dimention reduction analysis

@@ -132,7 +132,7 @@
 
 
 (defn le-filter [file & {:keys [m d]
-                          :or   {m 0.01
+                          :or   {m 0.05
                                  d 35.0}}]
   (->> file
        (i/$where (i/$fn
