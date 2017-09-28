@@ -60,40 +60,28 @@
 
 (defn hhv6-sets []
   (hhv6-loc)
-  (def H37-Pa  (m-get-set L37-Pa  0))
-  (def H37-S2b (m-get-set L37-S2b 0))        
-  (def H37-Pb  (m-get-set L37-Pb  0))
-  (def H37-S3  (m-get-set L37-S3  0))       
-  (def H37-Pc  (m-get-set L37-Pc  0))            
-  (def H37-S2a (m-get-set L37-S2a 0))
+  (def samples {:H37-Pa  (m-get-set L37-Pa  0)
+                :H37-S2b (m-get-set L37-S2b 0)        
+                :H37-Pb  (m-get-set L37-Pb  0)
+                :H37-S3  (m-get-set L37-S3  0)       
+                :H37-Pc  (m-get-set L37-Pc  0)            
+                :H37-S2a (m-get-set L37-S2a 0)
 
-  (def H42-Mb  (m-get-set L42-Mb  0))
-  (def H42-Ma  (m-get-set L42-Ma  0))
-  (def H42-Pa  (m-get-set L42-Pa  0))
-  (def H42-Pb  (m-get-set L42-Pb  0))
-  (def H42-Pc  (m-get-set L42-Pc  0))
-  (def H42-S1a (m-get-set L42-S1a 0))
-  (def H42-S1b (m-get-set L42-S1b 0))
-  (def H42-S1c (m-get-set L42-S1c 0))
+                :H42-Mb  (m-get-set L42-Mb  0)
+                :H42-Ma  (m-get-set L42-Ma  0)
+                :H42-Pa  (m-get-set L42-Pa  0)
+                :H42-Pb  (m-get-set L42-Pb  0)
+                :H42-Pc  (m-get-set L42-Pc  0)
+                :H42-S1a (m-get-set L42-S1a 0)
+                :H42-S1b (m-get-set L42-S1b 0)
+                :H42-S1c (m-get-set L42-S1c 0)
 
-  (def H43-Pb  (m-get-set L43-Pb  0))
-  (def H43-S1a (m-get-set L43-S1a 0))  
-  (def H43-S1b (m-get-set L43-S1b 0))
+                :H43-Pb  (m-get-set L43-Pb  0)
+                :H43-S1a (m-get-set L43-S1a 0)  
+                :H43-S1b (m-get-set L43-S1b 0)
 
-  (def H72-M   (m-get-set L72-M   0))
-  (def H72-Pa  (m-get-set L72-Pa  0)))
-
-
-
-(def samples [H37-Pa  H37-Pb  H37-Pc
-                            H37-S2a H37-S2b H37-S3
-                            H42-Ma  H42-Mb
-                            H42-Pa  H42-Pb  H42-Pc
-                            H42-S1a H42-S1b H42-S1c
-                            H43-Pb  H43-S1a H43-S1b
-              H72-M   H72-Pa])
-
-
+                :H72-M   (m-get-set L72-M   0)
+                :H72-Pa  (m-get-set L72-Pa  0)}))
 
 (defn le-filter [file & {:keys [m d]
                           :or   {m 0.01

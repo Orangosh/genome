@@ -187,3 +187,62 @@
          column
          :data file6)
         (i/view))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;save incfiles
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn save-inc [file file-out]
+  "/home/yosh/datafiles/incanted_files/SVDs.inc"
+    (with-open [f-out (io/writer file-out)]
+      (csv/write-csv f-out [(map name (i/col-names file))])
+      (csv/write-csv f-out (i/to-list file))))
+xo
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;simple trasfer of tables
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(save-inc (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div] table)  "/mnt/data/hcmv/table-hcmv")
+
+(defn HCMV-scatter [file]
+  (let [projection (ii/read-dataset file :header true)]
+    (-> (c/scatter-plot (i/$ :mean-cov projection)
+                        (i/$ :nuc-div  projection)
+                        :title "HCMV preliminary data"
+                        :x-label "Coverage"
+                        :y-label "Nucleotide diversity")
+        (i/view))))
+
+(HCMV-scatter "/home/yosh/data/table-hcmv")
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-mean [min-val max-val file]
+  (let [mymean (->> file
+                    (i/$where (i/$fn [depth] (and (<= min-val depth)
+                                                  (> max-val depth))))
+                    (i/$ :minfr)
+                    (#(if (empty? %) 0.0 (st/mean %))))]
+    [min-val max-val mymean]))
+
+(defn get-bins [bin_size max_depth]
+  (let [bin_num (int (/ max_depth bin_size))]
+    (partition 2 1 (map #(double (* (/ % bin_num) max_depth))
+                        (range (inc bin_num))))))
+
+(defn binned-single-sample [bin_size max_depth file]
+  (map #(get-mean (first %) (second %) file)
+       (get-bins bin_size max_depth)))
+
+(defn get-all-together [bin_size max_depth file]
+  (let [baset (->> (apply i/conj-rows (map vec (get-bins bin_size max_depth)))
+                      (i/rename-cols {:col-0 :min-val :col-1 :max-val}))
+        mappd (map #(/ % (count samples))
+                    (apply map + (map #(map last (binned-single-sample
+                                                  bin_size
+                                                  max_depth %))
+                                      (vals file))))]
+    (i/add-column :minfr mappd baset)))

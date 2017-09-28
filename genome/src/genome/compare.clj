@@ -87,9 +87,14 @@
 
        
 #_(defn overtime []
-    (def a79b79          (p-unite [S79-Pa S79-Pb]))
-    (def a20b20c20       (p-unite [S20-Pa S20-Pb  S20-Pc]))
-    (def b19c19d19       (p-unite [S19-Pb S19-Pc  S19-Pd])))
+    (def a79b79          (p-unite [(samples :S79-Pa)
+                                   (samples :S79-Pb)]))
+    (def a20b20c20       (p-unite [(samples :S20-Pa)
+                                   (samples :S20-Pb)
+                                   (samples :S20-Pc)]))
+    (def b19c19d19       (p-unite [(samples :S19-Pb)
+                                   (samples :S19-Pc)
+                                   (samples :S19-Pd)])))
 #_(defn overtime-sibs []
     (def Sa79Sb79        (p-unite [S79-S1a S79-S1b]))
     (def Sa20Sb20        (p-unite [S20-S1a S20-S1b])))
@@ -221,36 +226,6 @@ gets pos nonsyn, with min allele and depth"
     (clojure.set/intersection tab1 tab2)))            
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;CALCULATING MUTATION RATE
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn mut-rate [file]
-  "input.inc should be a synonimous mutation only"
-  (let [com_syn+ (->> file
-                      (i/$where {:CDS+ {:$ne "-" }})
-                      (i/$where (i/$fn [pi1] (= pi1 0.0 )))
-                      (i/$where (i/$fn [majorf+1 minorf+1 majorf+2 minorf+2] 
-                                       (= majorf+1 minorf+1 majorf+2 minorf+2))))
-        com_syn- (->> file
-                      (i/$where {:CDS- {:$ne "-" }})
-                      (i/$where (i/$fn [pi1] (= pi1 0.0 )))
-                      (i/$where (i/$fn [majorf-1 minorf-1 majorf-2 minorf-2]
-                                       (= majorf-1 minorf-1 majorf-2 minorf-2))))
-        mut_syn+ (->> com_syn+
-                      (i/$where (i/$fn [maj_p+1 maj_p+2 min_p+2]
-                                       (or (not= maj_p+1 maj_p+2)
-                                           (not= maj_p+1 min_p+2))))
-                      i/nrow)
-        mut_syn- (->> com_syn-
-                     (i/$where (i/$fn [maj_p-1 maj_p-2 min_p-2]
-                                      (or (not= maj_p-1 maj_p-2)
-                                          (not= maj_p-1 min_p-2))))
-                     i/nrow)
-        com_sum  (double (+ (i/nrow com_syn+) (i/nrow com_syn-)))]
-
-    (if (= 0.0 com_sum)
-      0.0
-      (/ (+ mut_syn+ mut_syn-) com_sum)))) 
+ 
     
    

@@ -80,42 +80,29 @@
 
 (defn get_samples []
   (hcmv-loc)
-  (def samples {S05-Pa  (m-get-set L05-Pa  0)
-                S05-M   (m-get-set L05-M   0)
+  (def samples {:S05-Pa  (m-get-set L05-Pa  0)
+                :S05-M   (m-get-set L05-M   0)
 
-                S19-Pb  (m-get-set L19-Pb  0)
-                S19-Pc  (m-get-set L19-Pc  0)
-                S19-Pd  (m-get-set L19-Pd  0)
-                S19-S1a (m-get-set L19-S1a 0)
+                :S19-Pb  (m-get-set L19-Pb  0)
+                :S19-Pc  (m-get-set L19-Pc  0)
+                :S19-Pd  (m-get-set L19-Pd  0)
+                :S19-S1a (m-get-set L19-S1a 0)
 
-                S20-Pa  (m-get-set L20-Pa  0)
-                S20-Pb  (m-get-set L20-Pb  0)
-                S20-Pc  (m-get-set L20-Pc  0)
-                S20-S1a (m-get-set L20-S1a 0) 
-                S20-S1b (m-get-set L20-S1  0)
+                :S20-Pa  (m-get-set L20-Pa  0)
+                :S20-Pb  (m-get-set L20-Pb  0)
+                :S20-Pc  (m-get-set L20-Pc  0)
+                :S20-S1a (m-get-set L20-S1a 0) 
+                :S20-S1b (m-get-set L20-S1  0)
                 
-                S79-Pa  (m-get-set L79-Pa  0)
-                S79-Pb  (m-get-set L79-Pb  0)
-                S79-M   (m-get-set L79-M   0)
-                S79-S1a (m-get-set L79-S1a 0)
-                S79-S1b (m-get-set L79-S1b 0)}))
+                :S79-Pa  (m-get-set L79-Pa  0)
+                :S79-Pb  (m-get-set L79-Pb  0)
+                :S79-M   (m-get-set L79-M   0)
+                :S79-S1a (m-get-set L79-S1a 0)
+                :S79-S1b (m-get-set L79-S1b 0)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def samples [S05-Pa
-              S19-Pb  S19-Pc  S19-Pd
-              S20-Pa  S20-Pb  S20-Pc
-              S79-Pa  S79-Pb
-              S05-M   S79-M
-              S19-S1a
-              S20-S1a S20-S1b
-              S79-S1a S79-S1b])
-#_(def mat
-    (genome.dreduction/pcaM samples))
-
-
 
 (defn le-filter [file & {:keys [m d]
                           :or   {m 0.05
@@ -229,16 +216,6 @@
                 (i/view))))
 
 
-
-
-
-
-
-
-
-
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Gneral description
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -262,34 +239,34 @@
 ;;Samples dataset
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn samples []
+(defn sample-table [samples]
   (->> (i/dataset
         [:sample  :player   :time-pt]
-        [[S05-Pa  "Primary" 1]
-         [S05-M   "Mother"  1];;for graphs remove
-         [S19-Pb  "Primary" 1]
-         [S19-Pc  "Primary" 2]
-         [S19-Pd  "Primary" 3]
-         [S19-S1a "Sibling" 1]
-         [S20-Pa  "Primary" 1]
-         [S20-Pb  "Primary" 2]
-         [S20-Pc  "Primary" 3]
-         [S20-S1a "Sibling" 1]
-         [S20-S1b "Sibling" 2]
-         [S79-Pa  "Primary" 1]
-         [S79-Pb  "Primary" 2]
-         [S79-M   "Mother"  0]
-         [S79-S1a "Sibling" 1]
-         [S79-S1b "Sibling" 2]])
+        [[(samples :S05-Pa ) "Primary" 1]
+         [(samples :S05-M  ) "Mother"  1] ;;for graphs remove
+         [(samples :S19-Pb ) "Primary" 1]
+         [(samples :S19-Pc ) "Primary" 2]
+         [(samples :S19-Pd ) "Primary" 3]
+         [(samples :S19-S1a) "Sibling" 1]
+         [(samples :S20-Pa ) "Primary" 1]
+         [(samples :S20-Pb ) "Primary" 2]
+         [(samples :S20-Pc ) "Primary" 3]
+         [(samples :S20-S1a) "Sibling" 1]
+         [(samples :S20-S1b) "Sibling" 2]
+         [(samples :S79-Pa ) "Primary" 1]
+         [(samples :S79-Pb ) "Primary" 2]
+         [(samples :S79-M  ) "Mother"  0]
+         [(samples :S79-S1a) "Sibling" 1]
+         [(samples :S79-S1b) "Sibling" 2]])
        (i/add-derived-column
         :name
         [:sample]
-        #(subs (first (i/$ :r_seq  %)) 3))
+        #(first (i/$ :r_seq  %)))
        (i/add-derived-column
         :mean-cov
         [:sample]
-        #(/ (sum-cov %)
-            (i/nrow  %)))
+        #(format "%.2f" (/ (sum-cov %)
+                           (i/nrow  %))))
        (i/add-derived-column
         :cov>20
         [:sample]
@@ -298,19 +275,18 @@
         :n-seg
         [:cov>20]
         #(if (> (i/nrow %) 0)
-           (/ (double (cutoff %)) (i/nrow %)) 0.0))
+           (format "%.4f" (/ (double (cutoff %)) (i/nrow %))) 0.0))
        (i/add-derived-column
         :nuc-div
         [:cov>20]
         #(if (> (i/nrow %) 0)
-           (/ (sum-pi %) (i/nrow %)) 0.0))
+           (format "%.4f" (/ (sum-pi %)  (i/nrow %))) 0.0))
        (i/add-derived-column
         :sfs
         [:cov>20]
         #(if (> (i/nrow %) 0) (p/bin-sfs 10 (da/get-synonymous %)) 0))
        (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div :sample :cov>20 :sfs])))
-(def p-samples (memoize samples))
-
+(def p-sample-table (memoize sample-table))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Simple visualizations
 

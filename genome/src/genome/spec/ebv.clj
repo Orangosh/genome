@@ -72,64 +72,40 @@
 
 (defn ebv-sets []
   (ebv-loc)
-  (def E44-Pb  (m-get-set L44-Pb  0))   
-  (def E44-S2a (m-get-set L44-S2a 0))  
-  (def E44-S2b (m-get-set L44-S2b 0))  
-  (def E44-S2c (m-get-set L44-S2c 0))   
-  (def E44-S3  (m-get-set L44-S3  0))
-  
-  (def E25-Ma  (m-get-set L25-Ma  0))  
-  (def E25-Mc  (m-get-set L25-Mc  0))  
-  (def E25-Pa  (m-get-set L25-Pa  0))  
-  (def E25-S1a (m-get-set L25-S1a 0))  
-  (def E25-S1b (m-get-set L25-S1b 0))  
-  (def E25-S1c (m-get-set L25-S1c 0))  
-  (def E25-S1d (m-get-set L25-S1d 0))  
-  (def E25-S2a (m-get-set L25-S2a 0))  
-  (def E25-S2b (m-get-set L25-S2b 0))  
-  (def E25-S3a (m-get-set L25-S3a 0))  
-  (def E25-S3b (m-get-set L25-S3b 0))  
-  (def E25-S3c (m-get-set L25-S3c 0))  
+  (def samples {:E44-Pb  (m-get-set L44-Pb  0)   
+                :E44-S2a (m-get-set L44-S2a 0)  
+                :E44-S2b (m-get-set L44-S2b 0)  
+                :E44-S2c (m-get-set L44-S2c 0)   
+                :E44-S3  (m-get-set L44-S3  0)
+                
+                :E25-Ma  (m-get-set L25-Ma  0)  
+                :E25-Mc  (m-get-set L25-Mc  0)  
+                :E25-Pa  (m-get-set L25-Pa  0)  
+                :E25-S1a (m-get-set L25-S1a 0)  
+                :E25-S1b (m-get-set L25-S1b 0)  
+                :E25-S1c (m-get-set L25-S1c 0)  
+                :E25-S1d (m-get-set L25-S1d 0)  
+                :E25-S2a (m-get-set L25-S2a 0)  
+                :E25-S2b (m-get-set L25-S2b 0)  
+                :E25-S3a (m-get-set L25-S3a 0)  
+                :E25-S3b (m-get-set L25-S3b 0)  
+                :E25-S3c (m-get-set L25-S3c 0)  
 
-  (def E38-Ma  (m-get-set L38-Ma  0))   
-  (def E38-Pb  (m-get-set L38-Pb  0))   
-  (def E38-S1a (m-get-set L38-S1a 0))  
+                :E38-Ma  (m-get-set L38-Ma  0)   
+                :E38-Pb  (m-get-set L38-Pb  0)   
+                :E38-S1a (m-get-set L38-S1a 0)  
 
-  (def E40-Ma  (m-get-set L40-Ma  0))  
-  (def E40-Mb  (m-get-set L40-Mb  0))  
-  (def E40-Mc  (m-get-set L40-Mc  0))  
-  (def E40-Pa  (m-get-set L40-Pa  0))
-  (def E40-Pc  (m-get-set L40-Pc  0))
-  (def E40-S1a (m-get-set L40-S1a 0))
-  (def E40-S1b (m-get-set L40-S1b 0)))
+                :E40-Ma  (m-get-set L40-Ma  0)  
+                :E40-Mb  (m-get-set L40-Mb  0)  
+                :E40-Mc  (m-get-set L40-Mc  0)  
+                :E40-Pa  (m-get-set L40-Pa  0)
+                :E40-Pc  (m-get-set L40-Pc  0)
+                :E40-S1a (m-get-set L40-S1a 0)
+                :E40-S1b (m-get-set L40-S1b 0)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(def samples [E44-Pb 
-              E44-S2a E44-S2b E44-S2c 
-              E44-S3
-              
-              E25-Ma E25-Mc 
-              E25-Pa 
-              E25-S1a E25-S1b E25-S1c E25-S1d 
-              E25-S2a E25-S2b 
-              E25-S3a E25-S3b E25-S3c
-              
-              E38-Ma 
-              E38-Pb 
-              E38-S1a
-              
-              E40-Ma E40-Mb E40-Mc 
-              E40-Pa E40-Pc 
-              E40-S1a E40-S1b])
-
-(def mat
-  (genome.dreduction/pcaM samples))
-
-
 
 (defn le-filter [file & {:keys [m d]
                           :or   {m 0.05

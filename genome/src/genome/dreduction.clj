@@ -55,7 +55,7 @@
         #(if (> m  %) 0.0 %))))
 
 (defn get-zerowed-fr [m samples]
-  (PCA-matrix (map #(zero-fr m %) samples)))
+  (PCA-matrix (map #(zero-fr m %) (vals samples))))
 
 #_(def mat (get-zerowed-fr 0.05 samples))
 

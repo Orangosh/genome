@@ -85,69 +85,53 @@
 
 
 (defn all-cmv-sets []
-  (def S1      (m-get-set L1  0))
-  (def S10     (m-get-set L10 0))
+  (bmseq-loc)
+  (def samples  {:S1      (m-get-set L1  0)
+                 :S10     (m-get-set L10 0)
 
-  (def S11     (m-get-set L11 0))
-  (def S12     (m-get-set L12 0))
-  (def S13     (m-get-set L13 0))
-  (def S14     (m-get-set L14 0))
+                 :S11     (m-get-set L11 0)
+                 :S12     (m-get-set L12 0)
+                 :S13     (m-get-set L13 0)
+                 :S14     (m-get-set L14 0)
 
-  (def S15     (m-get-set L15 0))
-  (def S16     (m-get-set L16 0))
-  (def S17     (m-get-set L17 0))
-  (def S18     (m-get-set L18 0))
-  (def S23     (m-get-set L23 0))
+                 :S15     (m-get-set L15 0)
+                 :S16     (m-get-set L16 0)
+                 :S17     (m-get-set L17 0)
+                 :S18     (m-get-set L18 0)
+                 :S23     (m-get-set L23 0)
 
-  (def S24     (m-get-set L24 0))
-  (def S25     (m-get-set L25 0))
-  (def S26     (m-get-set L26 0))
-  (def S27     (m-get-set L27 0))
-  (def S28     (m-get-set L28 0))
-  (def S29     (m-get-set L29 0))
-  (def S30     (m-get-set L30 0))
-  (def S9      (m-get-set L9  0 ))
-  (def S05-Pa  (m-get-set L05-Pa  0))
-  (def S05-M   (m-get-set L05-M   0))
+                 :S24     (m-get-set L24 0)
+                 :S25     (m-get-set L25 0)
+                 :S26     (m-get-set L26 0)
+                 :S27     (m-get-set L27 0)
+                 :S28     (m-get-set L28 0)
+                 :S29     (m-get-set L29 0)
+                 :S30     (m-get-set L30 0)
+                 :S9      (m-get-set L9  0 )
+                 :S05-Pa  (m-get-set L05-Pa  0)
+                 :S05-M   (m-get-set L05-M   0)
 
-  (def S19-Pb  (m-get-set L19-Pb  0))
-  (def S19-Pc  (m-get-set L19-Pc  0))
-  (def S19-Pd  (m-get-set L19-Pd  0))
-  (def S19-S1a (m-get-set L19-S1a 0))
+                 :S19-Pb  (m-get-set L19-Pb  0)
+                 :S19-Pc  (m-get-set L19-Pc  0)
+                 :S19-Pd  (m-get-set L19-Pd  0)
+                 :S19-S1a (m-get-set L19-S1a 0)
 
-  (def S20-Pa  (m-get-set L20-Pa  0))
-  (def S20-Pb  (m-get-set L20-Pb  0))
-  (def S20-Pc  (m-get-set L20-Pc  0))
-  (def S20-S1a (m-get-set L20-S1a 0))
-  (def S20-S1b (m-get-set L20-S1  0))
+                 :S20-Pa  (m-get-set L20-Pa  0)
+                 :S20-Pb  (m-get-set L20-Pb  0)
+                 :S20-Pc  (m-get-set L20-Pc  0)
+                 :S20-S1a (m-get-set L20-S1a 0)
+                 :S20-S1b (m-get-set L20-S1  0)
 
-  (def S79-Pa  (m-get-set L79-Pa  0))
-  (def S79-Pb  (m-get-set L79-Pb  0))
-  (def S79-M   (m-get-set L79-M   0))
-  (def S79-S1a (m-get-set L79-S1a 0))
-  (def S79-S1b (m-get-set L79-S1b 0)))
+                 :S79-Pa  (m-get-set L79-Pa  0)
+                 :S79-Pb  (m-get-set L79-Pb  0)
+                 :S79-M   (m-get-set L79-M   0)
+                 :S79-S1a (m-get-set L79-S1a 0)
+                 :S79-S1b (m-get-set L79-S1b 0)}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def samples [S05-Pa
-              S19-Pb  S19-Pc  S19-Pd
-              S20-Pa  S20-Pb  S20-Pc
-              S79-Pa  S79-Pb
-              S05-M   S79-M
-              S19-S1a
-              S20-S1a S20-S1b
-              S79-S1a S79-S1b
-              S1  S10 S11
-              S12 S13
-              S14 S15 S16
-              S17 S18
-              S23 S24 S25
-              S26 S27
-              S28 S29 S30
-              S9])
 
 (def mat
   (genome.dreduction/pcaM samples))
