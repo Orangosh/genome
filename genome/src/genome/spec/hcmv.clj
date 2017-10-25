@@ -55,30 +55,7 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn hcmv-sets []
-  (hcmv-loc)
-  (def S05-Pa  (m-get-set L05-Pa  0))
-  (def S05-M   (m-get-set L05-M   0))
-
-  (def S19-Pb  (m-get-set L19-Pb  0))
-  (def S19-Pc  (m-get-set L19-Pc  0))
-  (def S19-Pd  (m-get-set L19-Pd  0))
-  (def S19-S1a (m-get-set L19-S1a 0))
-
-  (def S20-Pa  (m-get-set L20-Pa  0))
-  (def S20-Pb  (m-get-set L20-Pb  0))
-  (def S20-Pc  (m-get-set L20-Pc  0))
-  (def S20-S1a (m-get-set L20-S1a 0)) 
-  (def S20-S1b (m-get-set L20-S1  0))
-  
-  (def S79-Pa  (m-get-set L79-Pa  0))
-  (def S79-Pb  (m-get-set L79-Pb  0))
-  (def S79-M   (m-get-set L79-M   0))
-  (def S79-S1a (m-get-set L79-S1a 0))
-  (def S79-S1b (m-get-set L79-S1b 0)))
-
-
-(defn get_samples []
+(defn get-samples []
   (hcmv-loc)
   (def samples {:S05-Pa  (m-get-set L05-Pa  0)
                 :S05-M   (m-get-set L05-M   0)
@@ -341,7 +318,7 @@
 
 (defn run-all [fnc]
   " a function that accept funcinos returns a valur "
-  (let [run_vec (i/$ :cov>20 (p-samples))]
+  (let [run_vec (i/$ :cov>20 (p-sample-table))]
     (double (/ (reduce + (map #(fnc %) run_vec))
                (reduce + (map #(i/nrow %) run_vec))))))
 
