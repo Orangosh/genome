@@ -83,6 +83,10 @@
                 :H72-M   (m-get-set L72-M   0)
                 :H72-Pa  (m-get-set L72-Pa  0)}))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+
+
 (defn le-filter [file & {:keys [m d]
                           :or   {m 0.01
                                  d 13.0}}]
@@ -109,6 +113,7 @@
        (i/$where (i/$fn
                   [minfr1
                    minfr2  minfr3  minfr4
+
                    minfr5  minfr6  minfr7
                    minfr8  minfr9
                    minfr10 minfr11
@@ -193,3 +198,267 @@
         (c/add-points (i/$ [3 4 5 6 7 8 11 12 17 18]  0 projection)
                       (i/$ [3 4 5 6 7 8 11 12 17 18]  1 projection))
         (i/view))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Gneral description
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Gneral descriptive functions
+
+
+(defn cutoff [file]
+  (i/nrow (i/$where (i/$fn [minfr pi]
+                           (and (> minfr 0.05)
+                                (> pi 0.0))) file)))
+(defn sum-cov [file]
+  (i/sum (i/$ :depth file)))
+
+(defn sum-pi [file]
+  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.05)) file))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;Samples dataset EBC Taken from HCMV
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn sample-table [samples]
+  (->> (i/dataset
+        [ :sample            :player   :date]
+        [[(samples :H37-Pa ) "Primary" 1]
+         [(samples :H37-Pb ) "Primary" 1] ;;for graphs remove
+         [(samples :H37-S2b) "Sibling" 2]
+         [(samples :H37-S3 ) "Sibling" 3]
+         [(samples :H37-Pc ) "Sibling" 1]
+         [(samples :H37-S2a) "Sibling" 1]
+
+         [(samples :H42-Ma ) "Mother"  1]
+         [(samples :H42-Mb ) "Mother"  1]
+         [(samples :H42-Pa ) "Primary" 1]
+         [(samples :H42-Pb ) "Primary" 1]
+         [(samples :H42-Pc ) "Primary" 1]
+         [(samples :H42-S1a) "Sibling" 1]
+         [(samples :H42-S1b) "Sibling" 1]
+         [(samples :H42-S1c) "Sibling" 1]
+
+         [(samples :H43-Pb ) "Primary" 1]
+         [(samples :H43-S1a) "Sibling" 1]
+         [(samples :H43-S1b) "Sibling" 1]
+
+         [(samples :H72-M  ) "Mother"  1]
+         [(samples :H72-Pa ) "Primary" 1]])
+       
+       (i/add-derived-column
+        :name
+        [:sample]
+        #(first (i/$ :r_seq  %)))
+       (i/add-derived-column
+        :mean-cov
+        [:sample]
+        #(format "%.2f" (/ (sum-cov %)
+                           (i/nrow  %))))
+       (i/add-derived-column
+        :cov>20
+        [:sample]
+        #(i/$where (i/$fn [cov] (> cov 20)) %))
+       (i/add-derived-column
+        :n-seg
+        [:cov>20]
+        #(if (> (i/nrow %) 0)
+           (format "%.4f" (/ (double (cutoff %)) (i/nrow %))) 0.0))
+       (i/add-derived-column
+        :nuc-div
+        [:cov>20]
+        #(if (> (i/nrow %) 0)
+           (format "%.4f" (/ (sum-pi %)  (i/nrow %))) 0.0))
+       (i/add-derived-column
+        :sfs
+        [:cov>20]
+        #(if (> (i/nrow %) 0) (p/bin-sfs 10 (da/get-synonymous %)) 0))
+       (i/$ [:name :player :date :mean-cov :n-seg :nuc-div :sample :cov>20 :sfs])))
+(def p-sample-table (memoize sample-table))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Simple visualizations
+
+(defn show-one [sams [column title result]]
+  (i/with-data sams
+    (i/view (c/bar-chart :name column
+                         :title title
+                         :group-by :player
+                         :x-label "Sample name"
+                         :y-label result
+                         :legend true
+                         :vertical false))))
+
+(defn show-box [sams [column title result]]
+  (-> (c/box-plot column
+                  :title title
+                  :x-label "Sample name"
+                  :y-label result
+                  :legend true
+                  :series-label "Primary"
+                  :data (i/$where {:player {:$eq "Primary"}} sams))
+      (c/add-box-plot column
+                      :data (i/$where {:player {:$eq "Mother"}} sams)
+                      :series-label "Mother")
+      (c/add-box-plot column
+                      :data (i/$where {:player {:$eq "Sibling"}} sams)
+                      :series-label "Sibling")
+            (i/view)))
+
+
+(defn show-common [sams [column title result]]
+  (i/with-data  (i/$rollup :mean column :player sams)
+    (i/view (c/bar-chart :player column
+                         :title title
+                         :x-label "Sample name"
+                         :y-label result
+                         :legend true
+                         :vertical false))))
+
+(defn show-all [fnc]
+  (let [sams (p-samples)]
+    (map #(fnc sams %)
+
+         [[:mean-cov "Mean coverage"                   "mean coverage"        ]
+          [:nuc-div  "Nucleotide diversity"            "Nucleotide diversity" ] 
+          [:n-seg    "Proportion of segregating sites" "Segregation propotion"]])))
+#_(show-all show-one)
+#_(show-all show-common)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;ALL SAMPLES descriptive ANALYSIS 
+
+(defn run-all [fnc]
+  " a function that accept funcinos returns a valur "
+  (let [run_vec (i/$ :cov>20 (p-sample-table))]
+    (double (/ (reduce + (map #(fnc %) run_vec))
+               (reduce + (map #(i/nrow %) run_vec))))))
+
+(defn stat-all []
+  (println "mean coverage for all:           " (run-all sum-cov))
+  (println "Nucleotide diversity:            " (run-all sum-pi ))
+  (println "Segregating Sites per nucleotid: " (run-all cutoff)))
+#_ (stat-all)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;SINGLE SAMPLE descriptive ANALYSIS
+
+(defn summary-sfs [file]
+  (let [synonymous (da/get-synonymous file)
+        syn-sfs    (p/bin-sfs 10 synonymous)
+        mean_cov   (/ (sum-cov file)      (i/nrow file))
+        nuc_div    (/ (sum-pi file)       (i/nrow file))
+        snp>nucs   (double (/ (cutoff file)       (i/nrow file)))]
+    (println "\nSummary statistics for" (first (i/$ :r_seq file))":")
+    (println "mean coverage:                    " mean_cov)
+    (println "Nucleotide diversity:             " nuc_div)
+    (println "Segregating Sites per nucleotid:  " snp>nucs)
+    (println "Synonymous site frequency spectra:")
+    (println (map first  syn-sfs))
+    (println (map second syn-sfs))))
+
+(defn stat-sample [fnc]
+  (let [run_vec (i/$ :sample (p-samples))]
+    (map #(fnc %) run_vec)))
+#_(stat-sample summary-sfs)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;GET WINDOWED SET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn win-100 [file]
+  (p/m-slide-mean file :pi :pi_slide 100)) 
+
+(defn les-win []
+  (def W05-Pa  (win-100 (m-get-set L05-Pa  20)))
+  (def W05-M   (win-100 (m-get-set L05-M   20)))
+
+  (def W19-Pb  (win-100 (m-get-set L19-Pb  20)))
+  (def W19-Pc  (win-100 (m-get-set L19-Pc  20)))
+  (def W19-Pd  (win-100 (m-get-set L19-Pd  20)))
+  (def W19-S1a (win-100 (m-get-set L19-S1a 20)))
+
+  (def W20-Pa  (win-100 (m-get-set L20-Pa  20)))
+  (def W20-Pb  (win-100 (m-get-set L20-Pb  20)))
+  (def W20-Pc  (win-100 (m-get-set L20-Pc  20)))
+  (def W20-S1a (win-100 (m-get-set L20-S1a 20)))
+  (def W20-S1  (win-100 (m-get-set L20-S1  20)))
+  
+  (def W79-Pa  (win-100 (m-get-set L79-Pa  20)))
+  (def W79-Pb  (win-100 (m-get-set L79-Pb  20)))
+  (def W79-M   (win-100 (m-get-set L79-M   20)))
+  (def W79-S1a (win-100 (m-get-set L79-S1a 20)))
+  (def W79-S1b (win-100 (m-get-set L79-S1b 20))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;Non descriptive single sample
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Functions for understanding minor allele cutoff
+
+(defn fr-dist [dep mfr file] 
+  "tool for visualizing minor variant frequencies and FP + Depth"
+  (i/$where (i/$fn [depth minfr]
+                   (and (> depth dep)
+                        (< minfr mfr)))  
+            (i/$ [:ref-loc  :gfwd+ :gfwd- 
+                  :CDS+     :CDS-  :ref :loc 
+                  :depth :T :A  :C :G   :minfr :pi ] 
+                 file)))
+
+(defn all-freq-view [file1 file2 dep]
+  (-> (c/xy-plot   :loc :minfr
+                   :x-label "Position" :y-label "Minor variants frequency"
+                   :title (str dep " minimal")
+                   :data (fr-dist file1 dep 1.0)) 
+      (c/add-lines :loc :minfr
+                   :data (fr-dist file2 dep 1.0 ))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file1 dep 0.1))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file2 dep 0.1))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file1 dep 0.003))
+      (c/add-lines :loc  :minfr
+                   :data (fr-dist file2 dep 0.003))
+      (c/add-lines :loc 
+                   (map #(/ % 100000) (i/$ :depth file1))
+                   :data  file1)
+      (c/add-lines :loc 
+                   (map #(/ % 10000) (i/$ :depth file2))
+                   :data  file2)
+      (i/view)))   
+
+(defn poisson-nonfilthered [dep mfr file]
+  "get all poisson filtered data which is poistive under certain minor freq (mfr)"
+  (i/$where (i/$fn [pi] (> pi 0.0)) (fr-dist file dep mfr)))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Different Data slicing methods
+
+(defn pi-chart [file]
+  (->> file
+       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
+       (i/$ [:ref-loc :gfwd+ :gbwd+ :CDS+ :loc :pi
+             :depth :maj+ :min+ :maj_aa+ :min_aa+ 
+             :T     :A    :C    :G 
+             :orf+ :majorf+ :minorf+])
+       (i/$where (i/$fn [pi] (= pi 0.0)))))
+
+(defn nonsyn-chart [file]
+  (->> file
+       (i/$where (i/$fn [CDS+] (not= CDS+ "-")))
+       (i/$ [:ref-loc :gfwd+ :CDS+ :loc 
+             :depth :maj+ :min+ :maj_aa+ :min_aa+ 
+             :T     :A    :C    :G 
+             :orf+ :majorf+ :minorf+])
+       (i/$where (i/$fn [majorf+ minorf+] (not= majorf+ minorf+)))))
+

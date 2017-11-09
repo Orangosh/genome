@@ -36,6 +36,9 @@
        (i/$  [:gene :pt1 :pt2])
        (i/to-vect)))
 
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PRINT THE GENE INTO FASTA FILE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,10 +69,10 @@
                     doall
                     (partition 2)))
         seq-col  (->> fasta
-                   (map second)
-                   (map #(vec (str/split % #"")))
-                   (apply i/conj-cols)
-                   (i/$where {:col-0 {:$ne "-"}}))
+                      (map second)
+                      (map #(vec (str/split % #"")))
+                      (apply i/conj-cols)
+                      (i/$where {:col-0 {:$ne "-"}}))
         name-col (->> fasta
                       (map #(keyword (subs (first %) 1)))
                        vec)
@@ -93,21 +96,3 @@
     (map #(inc>gene gff-list inc-file % home)
          (drop-last (i/col-names inc-file)))))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;Deprecated- used for phylo from incanter
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(defn map-gene [gff [col file]]
-  (let [ sample_name (if (= col :merlin) "merlin" (first (i/$ :r_seq file)))]
-    (map #(get-gene % sample_name col file)
-         (gene-list gff))))
-
-(defn print-fas [gff]
-  (map #(map-gene gff %)
-       [[:merlin S19-Pb]
-        [:maj+ S05-M ]  [:maj+ S05-Pa ] [:maj+ S19-Pb ] [:maj+ S19-Pc ]
-        [:maj+ S19-Pd]  [:maj+ S19-S1a] [:maj+ S20-Pa ] [:maj+ S20-Pb ]
-        [:maj+ S20-Pc]  [:maj+ S20-S1 ] [:maj+ S20-S1a] [:maj+ S79-Pa ]
-        [:maj+ S79-Pb]  [:maj+ S79-M  ] [:maj+ S79-S1a] [:maj+ S79-S1b]]))

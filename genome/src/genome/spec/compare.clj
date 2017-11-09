@@ -131,7 +131,7 @@
 (defn str>sym [col-str number]
   (apply vector (map #(symbol (str col-str %)) (range 1 (inc number)))))
 
-(defn fil-hi-div-nonsyn7 [file & {:keys [filnum dp mf]
+#_(defn fil-hi-div-nonsyn7 [file & {:keys [filnum dp mf]
                        :or {dp 50
                             mf 0.05}}] 
   "A prototype for filther removes nil, 
@@ -165,7 +165,7 @@ gets pos nonsyn, with min allele and depth"
          (i/$ (into [] concat
                     [:loc :ref-loc1 :gfwd+ :gfwd- :CDS+ :CDS-a ]
                     (map #(map #(keyword %) %)
-                                   majorf+ majorf- minorf+ minorf- depth)) ))))))
+                                   majorf+ majorf- minorf+ minorf- depth))))))))
 
 
 (defn fil-hi-div-nonsyn7 [file & {:keys [dp mf]
@@ -360,9 +360,6 @@ gets pos nonsyn, with min allele and depth"
 
 
 
-
-
-
 (defn fil-hi-div1 [file & {:keys [dp mf]
                        :or {dp 50
                             mf 0.05}}] 
@@ -400,7 +397,7 @@ gets pos nonsyn, with min allele and depth"
                                             (filter_name file)))))]
     (->> (i/$order :col-1 :desc (i/conj-cols (keys merged) (vals merged)))
          (i/rename-cols {:col-0 :gene :col-1 :SNPs})
-         (i/$where (i/$fn [SNPs] (> SNPs 1)))))) 
+          (i/$where (i/$fn [SNPs] (> SNPs 1)))))) 
 
 
 

@@ -54,10 +54,10 @@
         [:minfr]
         #(if (> m  %) 0.0 %))))
 
-(defn get-zerowed-fr [m samples]
-  (PCA-matrix (map #(zero-fr m %) (vals samples))))
+(defn get-zerowed-fr [m samples chosen]
+  (PCA-matrix (map #(zero-fr m %) (map #(% samples) chosen))))
 
-#_(def mat (get-zerowed-fr 0.05 samples))
+#_(def mat (get-zerowed-fr 0.05 samples [:S05-Pa :S19-Pb :S19-Pc :S19-Pd :S20-Pa :S20-Pb :S20-Pc :S79-Pa :S79-Pb]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Dimention reduction analysis
@@ -119,5 +119,5 @@
     (with-open [f-out (io/writer file-out)]
       (csv/write-csv f-out (i/to-list SVDs)))))
 
-
+#_(def SVD (SNP-SVD (get-normalized (le-filter mat))))
 

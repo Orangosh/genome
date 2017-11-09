@@ -26,10 +26,10 @@
 
 (defn -main [file_in file_out refset gff3]
   (println "Welcome to clojure- starting incanter")
-  (gd/create-db file_in)
+  (def finalized (gd/create-db file_in))
 
   (println "Adding ref location")
-  (def refered     (rl/refer-ann refset gd/finalized))
+  (def refered     (rl/refer-ann refset finalized))
 
   (println "Adding annotations")
   (def annotated   (ga/annotate gff3 refered))
@@ -84,6 +84,7 @@
   (println "Adding orfs")
   (def orfd (da/add-orf-aa sfsd))
 
+  
   (with-open [f-out (io/writer file_out)]
     (csv/write-csv f-out [(map name (i/col-names orfd))])
     (csv/write-csv f-out (i/to-list orfd))))

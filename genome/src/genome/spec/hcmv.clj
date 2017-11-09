@@ -55,7 +55,7 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn get-samples []
+(defn get_samples []
   (hcmv-loc)
   (def samples {:S05-Pa  (m-get-set L05-Pa  0)
                 :S05-M   (m-get-set L05-M   0)
@@ -194,22 +194,22 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Gneral description
+;; Gneral description HCMV
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;Gneral descriptive functions
 
-
+ 
 (defn cutoff [file]
   (i/nrow (i/$where (i/$fn [minfr pi]
-                           (and (> minfr 0.0035)
+                           (and (> minfr 0.05)
                                 (> pi 0.0))) file)))
 (defn sum-cov [file]
   (i/sum (i/$ :depth file)))
 
 (defn sum-pi [file]
-  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.0035)) file))))
+  (i/sum (i/$ :pi (i/$where (i/$fn [minfr] (> minfr 0.05)) file))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -218,7 +218,7 @@
 
 (defn sample-table [samples]
   (->> (i/dataset
-        [:sample  :player   :time-pt]
+        [:sample  :player   :date]
         [[(samples :S05-Pa ) "Primary" 1]
          [(samples :S05-M  ) "Mother"  1] ;;for graphs remove
          [(samples :S19-Pb ) "Primary" 1]
