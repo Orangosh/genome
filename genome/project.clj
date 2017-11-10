@@ -7,6 +7,7 @@
                  [clojure-csv            "2.0.2" ]
                  [incanter               "1.5.7" ]     
                  [org.clojure/data.csv   "0.1.3" ]
+                 [distributions          "0.1.2" ]
                  [semantic-csv           "0.1.0" ]
                  [org.clojure/data.zip   "0.1.2" ]
                  [org.clojure/tools.cli  "0.3.5" ]

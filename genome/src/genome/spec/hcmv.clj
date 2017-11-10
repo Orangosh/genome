@@ -4,6 +4,7 @@
            [incanter.io       :as ii ]
            [incanter.stats    :as st ]
            [incanter.charts   :as c  ]
+           [distributions.core :refer :all]
            [genome.dna2aa     :as da ]
            [genome.stats      :as gs ]           
            [genome.consvar    :as cv ]
@@ -55,7 +56,7 @@
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn get_samples []
+(defn get-samples []
   (hcmv-loc)
   (def samples {:S05-Pa  (m-get-set L05-Pa  0)
                 :S05-M   (m-get-set L05-M   0)
@@ -78,8 +79,47 @@
                 :S79-S1b (m-get-set L79-S1b 0)}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn bin [n-bins xs]
+  (let [min-x   (apply min xs)
+        max-x   (apply max xs)
+        range-x (- max-x min-x)
+        bin-fn  (fn [x] (-> x
+                            (- min-x)
+                            (/ range-x)
+                            (* n-bins)
+                            (int)
+                            (min (dec n-bins))))]
+    {:map-bin (map bin-fn xs) :bin-val (/ range-x n-bins)}))
+
+(defn get-inference [file-key shape ci n-bins]
+  (let [binned      (->> file-key
+                          samples 
+                          (i/$ :minfr)
+                          (bin n-bins))
+        sample-mean (st/mean (:map-bin binned))
+        cutoff      (icdf (posterior (:map-bin binned) (poisson :rate) 
+                                     (gamma shape (/ shape sample-mean))) ci)]
+    {:cutoff cutoff :bin-val (:bin-val binned)}))
+
+(defn cutoff-map [samples & {:keys [shape  ci n-bins]
+                             :or   {shape  3
+                                    ci     0.95
+                                    n-bins 2000}}]
+  (zipmap (keys samples) (map #(let [cut-bin (get-inference % shape ci n-bins)]
+                                  (* (cut-bin :cutoff) (cut-bin :bin-val)))
+                              (keys samples) )))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn get-inference [file & {:keys [shape rate ci]
+                            :or {shape 1 rate 0.1}}]
+  (let [sampeled (->> file
+                      (i/$ :mf))]
+    (icdf (posterion data (poisson :rate) (gamma shape rate))) ci))
 
 (defn le-filter [file & {:keys [m d]
                           :or   {m 0.05
