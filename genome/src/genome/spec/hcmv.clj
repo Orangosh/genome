@@ -10,7 +10,8 @@
            [genome.consvar    :as cv ]
            [genome.pop        :as p  ]
            [clojure.data.csv  :as csv]
-           [genome.view       :as v  ]))
+           [genome.view       :as v  ]
+           [clojure.pprint    :as pr ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;DEFINE FILE LOCATIONS
@@ -21,68 +22,38 @@
 ;;(def home "/home/yosh/datafiles/incanted_files/")
 
 ;;;;;;;;;;;;;;;;;;;;;;;
-;; For Server
-(def home "/mnt/data/")
+ ;; For Server
 
-(defn hcmv-loc []
-  (def L05-Pa  (str home "hcmv/incanted_files/505-Pa.inc" ))
-  (def L05-M   (str home "hcmv/incanted_files/505-M.inc"  ))
-
-  (def L19-Pb  (str home "hcmv/incanted_files/519-Pb.inc" ))
-  (def L19-Pc  (str home "hcmv/incanted_files/519-Pc.inc" ))
-  (def L19-Pd  (str home "hcmv/incanted_files/519-Pd.inc" ))
-  (def L19-S1a (str home "hcmv/incanted_files/519-S1a.inc"))
-
-  (def L20-Pa  (str home "hcmv/incanted_files/520-Pa.inc" ))
-  (def L20-Pb  (str home "hcmv/incanted_files/520-Pb.inc" ))
-  (def L20-Pc  (str home "hcmv/incanted_files/520-Pc.inc" ))
-  (def L20-S1  (str home "hcmv/incanted_files/520-S1a.inc"))
-  (def L20-S1a (str home "hcmv/incanted_files/520-S1b.inc"))
-
-  (def L79-Pa  (str home "hcmv/incanted_files/579-Pa.inc" ))
-  (def L79-Pb  (str home "hcmv/incanted_files/579-Pb.inc" ))
-  (def L79-M   (str home "hcmv/incanted_files/579-M.inc"  ))
-  (def L79-S1a (str home "hcmv/incanted_files/579-S1a.inc"))
-  (def L79-S1b (str home "hcmv/incanted_files/579-S1b.inc")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;GET SET
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn def-samples [f v & {:keys [depth] :or {depth 0}}]
+  (let [home    (fn [x] (str "/mnt/data/hcmv/incanted_files/" x ".inc"))
+        samples (zipmap (map keyword v) (map home v))]
+    (into {} (for [[k v] samples] [k (f v depth)]))));;
 
 (defn get-set [file cov]
-
   "open an csv.inc file"
   (->> (ii/read-dataset file :header true)
        (i/$where (i/$fn [depth] (< cov depth)))))
 (def m-get-set (memoize get-set))
 
-(defn get-samples []
-  (hcmv-loc)
-  (def samples {:S05-Pa  (m-get-set L05-Pa  0)
-                :S05-M   (m-get-set L05-M   0)
+(defn win-100 [file]
+  (p/m-slide-mean file :pi :pi_slide 100))
 
-                :S19-Pb  (m-get-set L19-Pb  0)
-                :S19-Pc  (m-get-set L19-Pc  0)
-                :S19-Pd  (m-get-set L19-Pd  0)
-                :S19-S1a (m-get-set L19-S1a 0)
+(def vec-s ["505-Pa"  "505-M"   ;;"519-Pa"
+            "519-Pb" "519-Pc" "519-Pd"  "519-S1a"
+            "520-Pa" "520-Pb" "520-Pc" "520-S1a" "520-S1b"
+            "579-Pa" "579-Pb" "579-M"  "579-S1a" "579-S1b"])
+ 
 
-                :S20-Pa  (m-get-set L20-Pa  0)
-                :S20-Pb  (m-get-set L20-Pb  0)
-                :S20-Pc  (m-get-set L20-Pc  0)
-                :S20-S1a (m-get-set L20-S1a 0) 
-                :S20-S1b (m-get-set L20-S1  0)
-                
-                :S79-Pa  (m-get-set L79-Pa  0)
-                :S79-Pb  (m-get-set L79-Pb  0)
-                :S79-M   (m-get-set L79-M   0)
-                :S79-S1a (m-get-set L79-S1a 0)
-                :S79-S1b (m-get-set L79-S1b 0)}))
+#_(def samples (def-samples (fn [x y] (win-100 (m-get-set x y))))) 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;GET SET
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn bin [n-bins xs]
+  "This function creates bins the output is a map where :map-bin key is an seq of 
+to which bin does a value belongs. The :bin-val key describes the size of each bin"
   (let [min-x   (apply min xs)
         max-x   (apply max xs)
         range-x (- max-x min-x)
@@ -95,6 +66,8 @@
     {:map-bin (map bin-fn xs) :bin-val (/ range-x n-bins)}))
 
 (defn get-inference [file-key shape ci n-bins]
+  "Takes one sample and creates a cutoff map where :cutoff is the catoff value 
+   assuming a poisson likelyhood and a gamma conjugate prior"
   (let [binned      (->> file-key
                           samples 
                           (i/$ :minfr)
@@ -108,9 +81,65 @@
                              :or   {shape  3
                                     ci     0.95
                                     n-bins 2000}}]
-  (zipmap (keys samples) (map #(let [cut-bin (get-inference % shape ci n-bins)]
-                                  (* (cut-bin :cutoff) (cut-bin :bin-val)))
-                              (keys samples) )))
+  (i/dataset [:samples :cutoff]
+             (seq  (zipmap (keys samples)
+                           (map #(let [cut-bin (get-inference % shape ci n-bins)]
+                                   (* (cut-bin :cutoff) (cut-bin :bin-val)))
+                                (keys samples) )))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+
+(defn compare-S19-Pa [samples & sam-keys]
+  (let [consensus-gene  (map (fn [file]
+                               (->> file
+                                    (i/$where (i/$fn [ref-loc]
+                                                     (and (< ref-loc 16314)
+                                                          (> ref-loc 16250))))
+                                    (i/$ :maj+)
+                                    (reduce str)))
+                             (map #(samples %) sam-keys))
+        merlin          (->> (samples (first sam-keys))
+                             (i/$where (i/$fn [ref-loc]
+                                              (and (< ref-loc 16314)
+                                                   (> ref-loc 16250))))
+                             (i/$ :ncbi)
+                             (reduce str))
+        zipped          (zipmap sam-keys consensus-gene)
+        conj-mer        (conj {:merlin merlin} zipped)
+        home            "/mnt/data/hcmv/S19-Pa.fas"]
+    (map #(do (spit home 
+                    (str ">" (subs (str (:key %))) "\n")
+                    :append true)
+              (spit home (:val %)
+                    :append true)))))
+(defn compare-S19-Pa [samples & sam-keys]
+  (let [consensus-gene  (map (fn [file]
+                               (->> file
+                                    (i/$where (i/$fn [ref-loc]
+                                                     (and (< ref-loc 16296)
+                                                          (> ref-loc 16250))))
+                                    (i/$ :maj+)
+                                    (reduce str)))
+                             (map #(samples %) sam-keys))
+        merlin          (->> (samples (first sam-keys))
+                             (i/$where (i/$fn [ref-loc]
+                                              (and (< ref-loc 16296)
+                                                   (> ref-loc 16250))))
+                             (i/$ :ncbi)
+                             (reduce str))
+        zipped          (zipmap sam-keys consensus-gene)
+        conj-mer        (conj {:merlin merlin} zipped)
+        home            "/mnt/data/hcmv/S19-Pa.fas"]
+    (map #(do (spit home 
+                    (str ">" (subs (str (first %)) 1) "\n")
+                    :append true)
+              (spit home (str (last %) "\n")
+                    :append true)) conj-mer)))
+
+(compare-S19-Pa samples :S19-Pa :S19-Pb :S19-Pc :S19-Pd :S19-S1a)                            
+
+                            
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;FOR PCA
@@ -259,22 +288,22 @@
 (defn sample-table [samples]
   (->> (i/dataset
         [:sample  :player   :date]
-        [[(samples :S05-Pa ) "Primary" 1]
-         [(samples :S05-M  ) "Mother"  1] ;;for graphs remove
-         [(samples :S19-Pb ) "Primary" 1]
-         [(samples :S19-Pc ) "Primary" 2]
-         [(samples :S19-Pd ) "Primary" 3]
-         [(samples :S19-S1a) "Sibling" 1]
-         [(samples :S20-Pa ) "Primary" 1]
-         [(samples :S20-Pb ) "Primary" 2]
-         [(samples :S20-Pc ) "Primary" 3]
-         [(samples :S20-S1a) "Sibling" 1]
-         [(samples :S20-S1b) "Sibling" 2]
-         [(samples :S79-Pa ) "Primary" 1]
-         [(samples :S79-Pb ) "Primary" 2]
-         [(samples :S79-M  ) "Mother"  0]
-         [(samples :S79-S1a) "Sibling" 1]
-         [(samples :S79-S1b) "Sibling" 2]])
+        [[(samples :505-Pa ) "Primary" 1]
+         [(samples :505-M  ) "Mother"  1] ;;for graphs remove
+         [(samples :519-Pb ) "Primary" 1]
+         [(samples :519-Pc ) "Primary" 2]
+         [(samples :519-Pd ) "Primary" 3]
+         [(samples :519-S1a) "Sibling" 1]
+         [(samples :520-Pa ) "Primary" 1]
+         [(samples :520-Pb ) "Primary" 2]
+         [(samples :520-Pc ) "Primary" 3]
+         [(samples :520-S1a) "Sibling" 1]
+         [(samples :520-S1b) "Sibling" 2]
+         [(samples :579-Pa ) "Primary" 1]
+         [(samples :579-Pb ) "Primary" 2]
+         [(samples :579-M  ) "Mother"  0]
+         [(samples :579-S1a) "Sibling" 1]
+         [(samples :579-S1b) "Sibling" 2]])
        (i/add-derived-column
         :name
         [:sample]
@@ -306,6 +335,7 @@
 (def p-sample-table (memoize sample-table))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Simple visualizations
+;;; need to fix!!!!!!!!!!!!!!!
 
 (defn show-one [sams [column title result]]
   (i/with-data sams
@@ -389,35 +419,6 @@
   (let [run_vec (i/$ :sample (p-samples))]
     (map #(fnc %) run_vec)))
 #_(stat-sample summary-sfs)
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;GET WINDOWED SET
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn win-100 [file]
-  (p/m-slide-mean file :pi :pi_slide 100)) 
-
-(defn les-win []
-  (def W05-Pa  (win-100 (m-get-set L05-Pa  20)))
-  (def W05-M   (win-100 (m-get-set L05-M   20)))
-
-  (def W19-Pb  (win-100 (m-get-set L19-Pb  20)))
-  (def W19-Pc  (win-100 (m-get-set L19-Pc  20)))
-  (def W19-Pd  (win-100 (m-get-set L19-Pd  20)))
-  (def W19-S1a (win-100 (m-get-set L19-S1a 20)))
-
-  (def W20-Pa  (win-100 (m-get-set L20-Pa  20)))
-  (def W20-Pb  (win-100 (m-get-set L20-Pb  20)))
-  (def W20-Pc  (win-100 (m-get-set L20-Pc  20)))
-  (def W20-S1a (win-100 (m-get-set L20-S1a 20)))
-  (def W20-S1  (win-100 (m-get-set L20-S1  20)))
-  
-  (def W79-Pa  (win-100 (m-get-set L79-Pa  20)))
-  (def W79-Pb  (win-100 (m-get-set L79-Pb  20)))
-  (def W79-M   (win-100 (m-get-set L79-M   20)))
-  (def W79-S1a (win-100 (m-get-set L79-S1a 20)))
-  (def W79-S1b (win-100 (m-get-set L79-S1b 20))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

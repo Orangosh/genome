@@ -198,13 +198,13 @@
     (with-open [f-out (io/writer file-out)]
       (csv/write-csv f-out [(map name (i/col-names file))])
       (csv/write-csv f-out (i/to-list file))))
-xo
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;simple trasfer of tables
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(save-inc (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div] table)  "/mnt/data/hcmv/table-hcmv")
+(defn save-table [table file]
+  "/mnt/data/hcmv/table-hcmv"
+  (save-inc (i/$ [:name :player :time-pt :mean-cov :n-seg :nuc-div] table)  file))
 
 (defn HCMV-scatter [file]
   (let [projection (ii/read-dataset file :header true)]
@@ -215,7 +215,7 @@ xo
                         :y-label "Nucleotide diversity")
         (i/view))))
 
-(HCMV-scatter "/home/yosh/data/table-hcmv")
+#_(HCMV-scatter "/home/yosh/data/table-hcmv")
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -237,7 +237,7 @@ xo
   (map #(get-mean (first %) (second %) file)
        (get-bins bin_size max_depth)))
 
-(defn get-all-together [bin_size max_depth file]
+(defn get-all-together [bin_size max_depth file samples]
   (let [baset (->> (apply i/conj-rows (map vec (get-bins bin_size max_depth)))
                       (i/rename-cols {:col-0 :min-val :col-1 :max-val}))
         mappd (map #(/ % (count samples))

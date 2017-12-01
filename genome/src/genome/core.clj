@@ -43,7 +43,7 @@
   (println "Correcting read errors")
   (def minored
   "first value the p-value of poisson if 1- no possion filtering"
-    (cv/get-minor-allele 0.01 fstsensus))
+    (cv/get-minor-allele 1 fstsensus))
   
   (println "Corrected dept adjustment")
   (def coved  (cv/calc-coved cv/depth minored))
