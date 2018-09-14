@@ -6,7 +6,7 @@
            [incanter.io       :as ii ]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ARRANGING A GFF3 FILE INTO A DATASET
+;; ARRANGING A GFF3 FILE INTO A DATASET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn pairs [file]
@@ -27,7 +27,8 @@
       value)))
 
 (defn  add-id [id file]
-  "here you choose what attribute you would like to parse"
+  "here you choose what attribute you would like to parse and 
+   create a column with its name e.g :gene/name"
   (->> file
        (i/add-derived-column
         (keyword id)
@@ -41,7 +42,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;CREATING AN EMPTY REFFERENCE DATASET
+;; CREATING AN EMPTY REFFERENCE DATASET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-col-name [file attribute]
@@ -75,7 +76,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;FILLING THE REFFERENCE DATASET
+;; FILLING THE REFFERENCE DATASET
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-data [new-type old-type loc pt1 pt2]
@@ -129,7 +130,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;OPPORATION
+;; OPPERATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn gff3>dataset [file]
@@ -141,11 +142,11 @@
                                    :col8 :attributes} reference)
         attributed (add-id "gene" renamed)
         scrubed    (->> attributed (i/$ [:seqid :gene :type :strand :pt1 :pt2 ]))
-        scrubed+   (i/$where {:strand {:$eq "+"}} scrubed)
-        scrubed-   (i/$where {:strand {:$eq "-"}} scrubed)
-        rescrubed  (i/$where {:type {:$eq "gene"}} scrubed)
-        rescrubed+ (i/$where {:strand {:$eq "+"}} rescrubed)
-        rescrubed- (i/$where {:strand {:$eq "-"}} rescrubed)]
+        scrubed+   (i/$where {:strand {:$eq "+"}}    scrubed)
+        scrubed-   (i/$where {:strand {:$eq "-"}}    scrubed)
+        rescrubed  (i/$where {:type   {:$eq "gene"}} scrubed)
+        rescrubed+ (i/$where {:strand {:$eq "+"}}  rescrubed)
+        rescrubed- (i/$where {:strand {:$eq "-"}}  rescrubed)]
     
     (->> (empty-ref-db scrubed :type  (apply max (i/$ :pt2 scrubed)))
          (creat-one          (get-list scrubed+   :type)    "+")

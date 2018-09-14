@@ -46,7 +46,7 @@
   (->> file
        (i/add-derived-column
         (first con_type)
-        (last con_type) 
+        (last  con_type) 
         #(get-major  %1 %2 %3 %4))))
 
 
@@ -171,6 +171,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn get-minor-allele [pois_p file]
+  "first value the p-value of poisson if 1- no possion filtering"
   (if (= 1 pois_p)
     (i/rename-cols {:Aun :A :Tun :T :Cun :C :Gun :G} (minorify file))
     (poissonize pois_p (minorify file))))

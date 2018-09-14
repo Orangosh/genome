@@ -40,7 +40,7 @@
 
 (defn merge-all [col_name ref merged]
   (cond
-      (= (str col_name) ref)
+    (= (str col_name) ref)
       (merged \.)
       (= (str col_name) (s/lower-case ref))
       (merged \,)
@@ -69,7 +69,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;OPPORATION
+;OPPERATION
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn create-db [file & {:keys [strand_filter]

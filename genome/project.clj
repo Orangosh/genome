@@ -11,6 +11,7 @@
                  [semantic-csv           "0.1.0" ]
                  [org.clojure/data.zip   "0.1.2" ]
                  [org.clojure/tools.cli  "0.3.5" ]
+                 [com.rpl/specter        "1.1.1" ]
                  [net.mikera/core.matrix "0.60.3"]]
   :jvm-opts     ["-Xmx45g"]
   :main         genome.core
