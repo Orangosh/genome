@@ -1,0 +1,127 @@
+(ns genome.analyze
+  (require [clojure.java.io   :as io ]
+           [incanter.core     :as i  ]
+           [incanter.io       :as ii ]
+           [incanter.stats    :as st ]
+           [incanter.charts   :as c  ]
+           [genome.dna2aa     :as da ]
+           [genome.stats      :as gs ]
+           [genome.consvar    :as cv ]
+           [genome.pop        :as p  ]
+           [clojure.data.csv  :as csv]
+           [genome.view       :as v  ]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;DEFINE FILE LOCATIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For PC
+;;(def home "/home/yosh/data")
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; For Server
+(def home "/mnt/data/")
+
+
+(defn get-loc []
+  ;;bm-sets
+  (def L1      (str home "bmseq/incanted_files/S1.inc"     ))
+
+  (def L10     (str home "bmseq/incanted_files/S10.inc"    ))
+  (def L11     (str home "bmseq/incanted_files/S11.inc"    ))
+  (def L12     (str home "bmseq/incanted_files/S12.inc"    ))
+  (def L13     (str home "bmseq/incanted_files/S13.inc"    ))
+  (def L14     (str home "bmseq/incanted_files/S14.inc"    ))
+  (def L15     (str home "bmseq/incanted_files/S15.inc"    ))
+  (def L16     (str home "bmseq/incanted_files/S16.inc"    ))
+  (def L17     (str home "bmseq/incanted_files/S17.inc"    ))
+  (def L18     (str home "bmseq/incanted_files/S18.inc"    ))
+
+  (def L23     (str home "bmseq/incanted_files/S23.inc"    ))
+  (def L24     (str home "bmseq/incanted_files/S24.inc"    ))
+  (def L25     (str home "bmseq/incanted_files/S25.inc"    ))
+  (def L26     (str home "bmseq/incanted_files/S26.inc"    ))
+  (def L27     (str home "bmseq/incanted_files/S27.inc"    ))
+  (def L28     (str home "bmseq/incanted_files/S28.inc"    ))
+  (def L29     (str home "bmseq/incanted_files/S29.inc"    ))
+  (def L30     (str home "bmseq/incanted_files/S30.inc"    ))
+
+  (def L9      (str home "bmseq/incanted_files/S9.inc"     ))
+
+  ;;cmv-sets
+  (def L05-Pa  (str home "bmseq/incanted_files/505-Pa.inc" ))
+  (def L05-M   (str home "bmseq/incanted_files/505-M.inc"  ))
+
+  (def L19-Pb  (str home "bmseq/incanted_files/519-Pb.inc" ))
+  (def L19-Pc  (str home "bmseq/incanted_files/519-Pc.inc" ))
+  (def L19-Pd  (str home "bmseq/incanted_files/519-Pd.inc" ))
+  (def L19-S1a (str home "bmseq/incanted_files/519-S1a.inc"))
+
+  (def L20-Pa  (str home "bmseq/incanted_files/520-Pa.inc" ))
+  (def L20-Pb  (str home "bmseq/incanted_files/520-Pb.inc" ))
+  (def L20-Pc  (str home "bmseq/incanted_files/520-Pc.inc" ))
+  (def L20-S1  (str home "bmseq/incanted_files/520-S1.inc" ))
+  (def L20-S1a (str home "bmseq/incanted_files/520-S1a.inc"))
+
+  (def L79-Pa  (str home "bmseq/incanted_files/579-Pa.inc" ))
+  (def L79-Pb  (str home "bmseq/incanted_files/579-Pb.inc" ))
+  (def L79-M   (str home "bmseq/incanted_files/579-M.inc"  ))
+  (def L79-S1a (str home "bmseq/incanted_files/579-S1a.inc"))
+  (def L79-S1b (str home "bmseq/incanted_files/579-S1b.inc"))
+
+  ;;hhv6-sets 
+  (def L37-Pa  (str home "hhv6/incanted_files/537-Pa.inc"  0))
+  (def L37-S2b (str home "hhv6/incanted_files/537-S2b.inc" 0))        
+  (def L37-Pb  (str home "hhv6/incanted_files/537-Pb.inc"  0))
+  (def L37-S3  (str home "hhv6/incanted_files/537-S3.inc"  0))       
+  (def L37-Pc  (str home "hhv6/incanted_files/537-Pc.inc"  0))            
+  (def L37-S2a (str home "hhv6/incanted_files/537-S2a.inc" 0))
+
+  (def L42-Mb  (str home "hhv6/incanted_files/542-Mb.inc"  0))
+  (def L42-Ma  (str home "hhv6/incanted_files/542-Ma.inc"  0))
+  (def L42-Pa  (str home "hhv6/incanted_files/542-Pa.inc"  0))
+  (def L42-Pb  (str home "hhv6/incanted_files/542-Pb.inc"  0))
+  (def L42-Pc  (str home "hhv6/incanted_files/542-Pc.inc"  0))
+  (def L42-S1a (str home "hhv6/incanted_files/542-S1a.inc" 0))
+  (def L42-S1b (str home "hhv6/incanted_files/542-S1b.inc" 0))
+  (def L42-S1c (str home "hhv6/incanted_files/542-S1c.inc" 0))
+
+  (def L43-Pb  (str home "hhv6/incanted_files/543-Pb.inc"  0))
+  (def L43-S1a (str home "hhv6/incanted_files/543-S1a.inc" 0))  
+  (def L43-S1b (str home "hhv6/incanted_files/543-S1b.inc" 0))
+
+  (def L72-M   (str home "hhv6/incanted_files/572-M.inc"   0))
+  (def L72-Pa  (str home "hhv6/incanted_files/572-Pa.inc"  0))
+
+  ;; ebv-sets []
+  (def L44-Pb  (str home "ebv/incanted_files/344-Pb.inc"  0))   
+  (def L44-S2a (str home "ebv/incanted_files/344-S2.inc"  0))  
+  (def L44-S2b (str home "ebv/incanted_files/344-S2b.inc" 0))  
+  (def L44-S2c (str home "ebv/incanted_files/344-S2c.inc" 0))   
+  (def L44-S3  (str home "ebv/incanted_files/344-S3.inc"  0))
+  
+  (def L25-Ma  (str home "ebv/incanted_files/525-Ma.inc"  0))  
+  (def L25-Mc  (str home "ebv/incanted_files/525-Mc.inc"  0))  
+  (def L25-Pa  (str home "ebv/incanted_files/525-Pa.inc"  0))  
+  (def L25-S1a (str home "ebv/incanted_files/525-S1a.inc" 0))  
+  (def L25-S1b (str home "ebv/incanted_files/525-S1b.inc" 0))  
+  (def L25-S1c (str home "ebv/incanted_files/525-S1c.inc" 0))  
+  (def L25-S1d (str home "ebv/incanted_files/525-S1d.inc" 0))  
+  (def L25-S2a (str home "ebv/incanted_files/525-S2a.inc" 0))  
+  (def L25-S2b (str home "ebv/incanted_files/525-S2b.inc" 0))  
+  (def L25-S3a (str home "ebv/incanted_files/525-S3a.inc" 0))  
+  (def L25-S3b (str home "ebv/incanted_files/525-S3b.inc" 0))  
+  (def L25-S3c (str home "ebv/incanted_files/525-S3c.inc" 0))  
+
+  (def L38-Ma  (str home "ebv/incanted_files/538-Ma.inc"  0))   
+  (def L38-Pb  (str home "ebv/incanted_files/538-Pb.inc"  0))   
+  (def L38-S1a (str home "ebv/incanted_files/538-S1a.inc" 0))  
+
+  (def L40-Ma  (str home "ebv/incanted_files/540-Ma.inc"  0))  
+  (def L40-Mb  (str home "ebv/incanted_files/540-Mb.inc"  0))  
+  (def L40-Mc  (str home "ebv/incanted_files/540-Mc.inc"  0))  
+  (def L40-Pa  (str home "ebv/incanted_files/540-Pa.inc"  0))
+  (def L40-Pc  (str home "ebv/incanted_files/540-Pc.inc"  0))
+  (def L40-S1a (str home "ebv/incanted_files/540-S1a.inc" 0))
+  (def L40-S1b (str home "ebv/incanted_files/540-S1b.inc" 0)))

@@ -112,17 +112,82 @@
 (defn minorify [file]
   "Adds four columns of nucleotide filthered by minor allele frequency"
   (->> file
-       (add-freq-col :Aun :Afr)
-       (add-freq-col :Tun :Tfr)
-       (add-freq-col :Cun :Cfr)
-       (add-freq-col :Gun :Gfr)
+       (add-freq-col :Aun :Atempfr)
+       (add-freq-col :Tun :Ttempfr)
+       (add-freq-col :Cun :Ctempfr)
+       (add-freq-col :Gun :Gtempfr)
+       (i/add-derived-column
+        :tempminfr
+        [:Atempfr :Ttempfr :Ctempfr :Gtempfr]
+        #(get-second %1 %2 %3 %4))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ERROR FILTERING ASSUMING POISSON DISTRIBUTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(defn poisson-median [lambda col_val upper_case lower_case maj_un cov_un p]
+  "Takes a site read base and using median calculates P asuming Poisson distribution"
+ (if (= "-"  maj_un)
+   0
+   (let [cov_lambda (* cov_un lambda)]
+     (if (and (or (<= 1 cov_lambda);if the coverage corrected lambda is < = than it means that the coverage is too low
+                  (not= 1 col_val))
+              (< p (st/cdf-poisson col_val :lambda cov_lambda))
+              (and (> upper_case 1) (> lower_case 1))) ;make sure thate the varient exists at both strands
+       col_val
+       0))))
+
+
+;adds new base var column after iteration over one base column
+(defn pois-correct-median [lambda col_var upper_case lower_case col_name p file]
+  "Adds one column of nunleotide fithered by poison distribution"
+  (->> file
+       (i/add-derived-column
+        col_name
+        [col_var upper_case lower_case :maj_un+ :cov_un]
+        #(poisson-median lambda %1 %2 %3 %4 %5 p))))
+
+(defn minorify-post-poisson [file]
+  "Adds four columns of nucleotide filthered by minor allele frequency after poison"
+  (->> file
+       (add-freq-col :A :Afr)
+       (add-freq-col :T :Tfr)
+       (add-freq-col :C :Cfr)
+       (add-freq-col :G :Gfr)
        (i/add-derived-column
         :minfr
         [:Afr :Tfr :Cfr :Gfr]
         #(get-second %1 %2 %3 %4))))
 
+(defn poissonize-median [p_value file]
+  "Adds four columns of nucleotide filthered by poison distribution"
+  (let [p      (- 1 p_value)
+        lambda (st/median (i/$ :tempminfr (i/$where (i/$fn [tempminfr] (> tempminfr 0.0)) file)))]
+    (->> file
+         (pois-correct-median lambda :Aun \A \a :A p)
+         (pois-correct-median lambda :Tun \T \t :T p)
+         (pois-correct-median lambda :Cun \C \c :C p)
+         (pois-correct-median lambda :Gun \G \g :G p)
+         (minorify-post-poisson))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ERROR FILTERING ASSUMING POISSON DISTRIBUTION
+;;ERROR FILTERING METHOD
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-minor-allele [pois_p file]
+  "first value the p-value of poisson if 1- no possion filtering"
+  (if (= 1 pois_p)
+    (i/rename-cols {:Aun     :A   :Tun     :T   :Cun     :C   :Gun     :G
+                    :Atempfr :Afr :Ttempfr :Tfr :Ctempfr :Cfr :Gtempfr :Gfr :tempminfr :minfr} (minorify file))
+    (poissonize-median pois_p (minorify file))))
+ 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;                         !!!!! DEPRACETED !!!!!
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;ERROR FILTERING ASSUMING POISSON DISTRIBUTION- NOT USED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
@@ -135,8 +200,8 @@
               ["G"      1.21  1.15  1.81    0 ]]))
 
 
-(defn poisson [col_var col_val maj_un cov_un p]
-  "Take a site read base and calculat P asuming Poisson distribution"
+(defn poisson-T [col_var col_val maj_un cov_un p]
+  "Takes a site read base and Using T_matrix calculates P asuming Poisson distribution"
  (if (= "-"  maj_un)
    0
    (let [lambda (->> T_matrix
@@ -146,35 +211,24 @@
      (if (< p (st/cdf-poisson col_val :lambda lambda))
        col_val
        0))))
-  
+
 ;adds new base var column after iteration over one base column
-(defn pois-correct [col_var col_name p file]
+(defn pois-correct-T [col_var col_name p file]
   "Adds one column of nunleotide fithered by poison distribution"
   (->> file
        (i/add-derived-column
         col_name
         [col_var :maj_un+ :cov_un]
-        #(poisson col_var %1 %2 %3 p))))
+        #(poisson-T col_var %1 %2 %3 p))))
 
-
-(defn poissonize [p_value file]
+(defn poissonize-T [p_value file]
   "Adds four columns of nucleotide filthered by poison distribution"
   (let [p (- 1 p_value)]
     (->> file
-         (pois-correct :Aun :A p)
-         (pois-correct :Tun :T p)
-         (pois-correct :Cun :C p)
-         (pois-correct :Gun :G p))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;ERROR FILTERING METHOD
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn get-minor-allele [pois_p file]
-  "first value the p-value of poisson if 1- no possion filtering"
-  (if (= 1 pois_p)
-    (i/rename-cols {:Aun :A :Tun :T :Cun :C :Gun :G} (minorify file))
-    (poissonize pois_p (minorify file))))
+         (pois-correct-T :Aun :A p)
+         (pois-correct-T :Tun :T p)
+         (pois-correct-T :Cun :C p)
+         (pois-correct-T :Gun :G p))))
 
 
 
@@ -187,38 +241,3 @@
 
 
 
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;ERROR FILTERING ASSUMING ALLELE FREQUENCY PRECENTAGE NOT IN USE!!!!!!!!!!!!
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn allele?  [col_var col_val maj_un cov_un minor_freq]
-  "Take a site read base and determent if it is in minimal minor allele def"
- (if (= "-"  maj_un)
-   0
-   (if (<  minor_freq
-           (double (/ col_val cov_un)))
-     col_val
-     0)))
-  
-;adds new base var column after iteration over one base column
-(defn minor-correct [col_var col_name minor_freq file]
-  "Adds one column of nunleotide fithered by minor allele freq"
-  (->> file
-       (i/add-derived-column
-        col_name
-        [col_var :maj_un+ :cov_un]
-        #(allele? col_var %1 %2 %3 minor_freq))))
-
-
-(defn minorallize [minor_freq file]
-  "Adds four columns of nucleotide filthered by minor allele frequency"
-  (->> file
-       (minor-correct :Aun :A minor_freq)
-       (minor-correct :Tun :T minor_freq)
-       (minor-correct :Cun :C minor_freq)
-       (minor-correct :Gun :G minor_freq)))

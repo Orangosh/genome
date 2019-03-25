@@ -1,20 +1,21 @@
-(ns genome.compare
-  (require [clojure.java.io   :as io ]
-           [incanter.core     :as i  ]
-           [incanter.datasets :as id ]
-           [incanter.io       :as ii ]
-           [incanter.charts   :as c  ]
-           [incanter.stats    :as st ]
-           [clojure.string    :as s  ]
-           [clojure.data.csv  :as csv]
-           [genome.stats      :as gs ]
-           [genome.pop        :as p  ]
-           [genome.consvar    :as cv ]
-           [genome.dna2aa     :as da ]))
+(ns genome.spec.compare
+  (require [clojure.java.io    :as io ]
+           [incanter.core      :as i  ]
+           [incanter.datasets  :as id ]
+           [incanter.io        :as ii ]
+           [incanter.charts    :as c  ]
+           [incanter.stats     :as st ]
+           [clojure.string     :as s  ]
+           [clojure.data.csv   :as csv]
+           [genome.spec.getseqs :refer :all ]))
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;DEFINE FILE LOCATIONS- needs one of the specs files
+;;Loading data (see genome/spec/getseqs)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#_(g/get-all-samples)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TESTING SNP TREND
@@ -59,7 +60,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;UNITE TWO DATASET AT COMMON SITES
+;; UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn add-row [file]
@@ -86,39 +87,171 @@
     (def p-unite (memoize unite))
 
        
-#_(defn overtime []
-    (def a79b79          (p-unite [(samples :S79-Pa)
-                                   (samples :S79-Pb)]))
-    (def a20b20c20       (p-unite [(samples :S20-Pa)
-                                   (samples :S20-Pb)
-                                   (samples :S20-Pc)]))
-    (def b19c19d19       (p-unite [(samples :S19-Pb)
-                                   (samples :S19-Pc)
-                                   (samples :S19-Pd)])))
+(defn hcmv-overtime []
+  (def a79b79           (p-unite [(hcmv_samples :579-Pa)
+                                  (hcmv_samples :579-Pb)]))
+  (def a20b20c20        (p-unite [(hcmv_samples :520-Pa)
+                                  (hcmv_samples :520-Pb)
+                                  (hcmv_samples :520-Pc)]))
+  (def b19c19d19        (p-unite [(hcmv_samples :519-Pb)
+                                  (hcmv_samples :519-Pc)
+                                  (hcmv_samples :519-Pd)])))
 
-#_(defn get-all-primary []
-    (def a5ab79bc20bc19 (p-unite [(samples :S05-Pa)
-                                  (samples :S79-Pa)
-                                  (samples :S79-Pb)
-                                  (samples :S20-Pb)
-                                  (samples :S20-Pc)
-                                  (samples :S19-Pb)
-                                  (samples :S19-Pc)])))
+(defn hcmv-primary []
+  (def a5ab79bc20bc19   (p-unite [(hcmv_samples :505-Pa)
+                                  (hcmv_samples :579-Pa)
+                                  (hcmv_samples :579-Pb)
+                                  (hcmv_samples :520-Pb)
+                                  (hcmv_samples :520-Pc)
+                                  (hcmv_samples :519-Pb)
+                                  (hcmv_samples :519-Pc)])))
 
-#_(defn overtime-sibs []
-    (def Sa79Sb79        (p-unite [S79-S1a
-                                   S79-S1b]))
-    (def Sa20Sb20        (p-unite [S20-S1a
-                                   S20-S1b])))
-#_(defn prim-others []
-    (def a5b19a20a79     (p-unite [S05-Pa
-                                   S19-Pb
-                                   S20-Pa
-                                   S79-Pa]))
-    (def Sa19Sa20M79Sa79 (p-unite [S19-S1a
-                                   S20-S1a
-                                   S79-M
-                                   S79-S1a])))
+(defn ebv-overtime []
+  (def a40b40           (p-unite [(ebv_samples :540-Pa)
+                                  (ebv_samples :540-Pc)])))
+
+(defn ebv-primary []
+  (def a25b38b44ac40    (p-unite [(ebv_samples :525-Pa)
+                                  (ebv_samples :538-Pb)
+                                  (ebv_samples :344-Pb)
+                                  (ebv_samples :540-Pa)
+                                  (ebv_samples :540-Pc)])))
+(defn hhv6-overtime []
+  (def a37b37c37        (p-unite [(hhv6_samples :537-Pa)
+                                  (hhv6_samples :537-Pb)
+                                  (hhv6_samples :537-Pc)]))
+  (def a42b42c42        (p-unite [(hhv6_samples :542-Pa)
+                                  (hhv6_samples :542-Pb)
+                                  (hhv6_samples :542-Pc)])))
+
+(defn hhv6-primary []
+  (def abc37abc42b43a72 (p-unite [(hhv6_samples :537-Pa)
+                                  (hhv6_samples :537-Pb)
+                                  (hhv6_samples :537-Pc)
+                                  (hhv6_samples :542-Pa)
+                                  (hhv6_samples :542-Pb)
+                                  (hhv6_samples :542-Pc)
+                                  (hhv6_samples :543-Pb)
+                                  (hhv6_samples :572-Pa)])))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Get depth and minfr means
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn get-hcmv-primary-col
+"Calculatse means for deapth and minfr for all hcmv primary infection"
+  [file]
+  (->> file
+       (i/add-derived-column
+        :depth_mean
+        [:depth1 :depth2 :depth3 :depth4 :depth5 :depth6 :depth7]
+        #(/ (+ %1 %2 %3 %4 %5 %6 %7) 7))
+       (i/add-derived-column
+        :minfr_mean
+        [:minfr1 :minfr2 :minfr3 :minfr4 :minfr5 :minfr6 :minfr7]
+        #(/ (+ %1 %2 %3 %4 %5 %6 %7) 7))))
+
+(defn get-ebv-primary-col
+  "Calculatse means for deapth and minfr for all ebv primary infection"
+  [file]
+  (->> file
+       (i/add-derived-column
+        :depth_mean
+        [:depth1 :depth2 :depth3 :depth4 :depth5 ]
+        #(/ (+ %1 %2 %3 %4 %5) 5))
+       (i/add-derived-column
+        :minfr_mean
+        [:minfr1 :minfr2 :minfr3 :minfr4 :minfr5]
+        #(/ (+ %1 %2 %3 %4 %5) 5))))
+
+(defn get-hhv6-primary-col
+  "Calculatse means for deapth and minfr for all hhv6 primary infection"
+  [file]
+  (->> file
+       (i/add-derived-column
+        :depth_mean
+        [:depth1 :depth2 :depth3 :depth4 :depth5 :depth6 :depth7 :depth8]
+        #(/ (+ %1 %2 %3 %4 %5 %6 %7 %8) 8))
+       (i/add-derived-column
+        :minfr_mean
+        [:minfr1 :minfr2 :minfr3 :minfr4 :minfr5 :minfr6 :minfr7 :minfr8]
+        #(/ (+ %1 %2 %3 %4 %5 %6 %7 %8) 8))))
+
+(defn circos [circosing]
+  (let [[file_in file_out] circosing]
+    (with-open [f-out (io/writer file_out)]
+      (csv/write-csv f-out [(map name (i/col-names file_in))])
+      (csv/write-csv f-out (i/to-list file_in)))))
+
+
+(defn hcmv-mean-primary-depth-minfr
+  [min_depth]
+  (hcmv-primary)
+  (->> a5ab79bc20bc19 
+       (get-hcmv-primary-col)
+       (i/$ [:loc :ref-loc1 :depth_mean :minfr_mean])
+       (i/$where (i/$fn [depth_mean] (> depth_mean min_depth)))))
+
+(defn ebv-mean-primary-depth-minfr
+  [min_depth]
+  (ebv-primary)
+  (->>  a25b38b44ac40  
+       (get-ebv-primary-col)
+       (i/$ [:loc :ref-loc1 :depth_mean :minfr_mean])
+       (i/$where (i/$fn [depth_mean] (> depth_mean min_depth)))))
+
+(defn hhv6-mean-primary-depth-minfr
+  [min_depth]
+  (hhv6-primary)
+  (->> abc37abc42b43a72
+       (get-hhv6-primary-col)
+       (i/$ [:loc :ref-loc1 :depth_mean :minfr_mean])
+       (i/$where (i/$fn [depth_mean] (> depth_mean min_depth)))))
+
+(circos
+ [(hcmv-mean-primary-depth-minfr 30)
+  "/mnt/data/primaries_common/circos_data/hcmv/hcmv_mean_primary_depth_minfr"])
+
+(circos
+ [(ebv-mean-primary-depth-minfr 30)
+  "/mnt/data/primaries_common/circos_data/ebv/ebv_mean_primary_depth_minfr"])
+
+(circos
+ [(hhv6-mean-primary-depth-minfr 30)
+  "/mnt/data/primaries_common/circos_data/hhv6/hhv6_mean_primary_depth_minfr"])
+
+(i/$ (range 40000 60000) [
+                          :loc :ref-loc1
+                          :depth1 :A1 :T1 :C1 :G1 :maj+1 :min+1
+                          :depth2 :A2 :T2 :C2 :G2 :maj+2 :min+2
+                          :depth3 :A3 :T3 :C3 :G3 :maj+3 :min+3
+                          :depth4 :A4 :T4 :C4 :G4 :maj+4 :min+4
+                          :depth5 :A5 :T5 :C5 :G5 :maj+5 :min+5
+                          :depth6 :A6 :T6 :C6 :G6 :maj+6 :min+6
+                          :depth7 :A7 :T7 :C7 :G7 :maj+7 :min+7
+                          ] a5ab79bc20bc19)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Old
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
 
 
 
@@ -398,31 +531,6 @@ gets pos nonsyn, with min allele and depth"
     (->> (i/$order :col-1 :desc (i/conj-cols (keys merged) (vals merged)))
          (i/rename-cols {:col-0 :gene :col-1 :SNPs})
           (i/$where (i/$fn [SNPs] (> SNPs 1)))))) 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 (defn filtre4 [file] 

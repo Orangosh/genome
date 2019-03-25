@@ -1,4 +1,4 @@
-(ns genome.phylo
+(ns genome.spec.phylo
   (require [clojure.java.io  :as io ]
            [clojure.string   :as str]
            [incanter.core    :as i  ]

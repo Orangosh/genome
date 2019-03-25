@@ -1,11 +1,11 @@
-(ns genome.dreduction
+(ns genome.spec.dreduce
   (require [clojure.java.io   :as io]
            [incanter.core     :as i]
            [incanter.io       :as ii]
            [incanter.stats    :as st]
            [incanter.charts   :as c]
-           [clojure.data.csv  :as csv]))
-
+           [clojure.data.csv  :as csv]
+           [genome.spec.getseqs :refer :all]))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;UNITE TWO DATASET AT COMMON SITES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

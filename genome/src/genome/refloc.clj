@@ -43,11 +43,16 @@
     (->> (i/conj-cols (vec ref-seq)
                       (vec (range 1 (+ 1 (count ref-seq))))
                       ref-loc)
-         (i/rename-cols {:col-0 :ncbi :col-1 :loc :col-2 :ref-loc} ))))
+         (i/rename-cols {:col-0 :ncbi
+                         :col-1 :loc
+                         :col-2 :ref-loc} ))))
 
 (def m-get-refinc (memoize get-refinc))
 
-(defn refer-ann [refset file]
+(defn refer-ann
+  "Here we unite the reffernce location (ref-loc) and the NCBI reference 
+  nucleotides with the dataset using the location"
+  [refset file]
   "/mnt/data/hcmv/consensus/exphcmv.fasta"
   "/mnt/data/ebv/consensus/ebv-ref-NC_007605.1.fasta"
   (let [ann_ref (m-get-refinc refset)]

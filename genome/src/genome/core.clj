@@ -10,13 +10,11 @@
            [incanter.charts   :as c  ]
            [incanter.stats    :as st ]
            [genome.database   :as gd ]
-           [genome.stats      :as gs ]
            [genome.pop        :as p  ]
            [genome.consvar    :as cv ]
            [genome.refloc     :as rl ]
            [genome.dna2aa     :as da ]
-           [genome.annotate   :as ga ]
-           [genome.view       :as v  ]))
+           [genome.annotate   :as ga ]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -43,7 +41,7 @@
   (println "Correcting read errors")
   (def minored
   "first value the p-value of poisson if 1- no possion filtering"
-    (cv/get-minor-allele 1 fstsensus))
+    (cv/get-minor-allele 0.05 fstsensus))
   
   (println "Corrected dept adjustment")
   (def coved  (cv/calc-coved cv/depth minored))
